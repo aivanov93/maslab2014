@@ -39,9 +39,9 @@ public class FakeRobot implements Robot {
 	private Driver driver;
 	private VisionDetector camera;
 	private List<Double> irs;
-	private Rectangle2D position;
+
 	
-	private double angleOfView=50 *Math.PI/180;
+	
 	
 	//represents the actual robot
 	private Rectangle2D robot;
@@ -55,8 +55,8 @@ public class FakeRobot implements Robot {
 	 * @param startX starting left corner of the robot
 	 * @param startY
 	 */
-	public FakeRobot(double width, double height, Map map, double startX, double startY){
-		robot=new Rectangle2D( width, height, startY, startY);
+	public FakeRobot(){
+
 	}
 	
 	public void update(){
@@ -71,10 +71,7 @@ public class FakeRobot implements Robot {
 		return robot;
 	}
 	
-	public double angleOfView(){
-		return angleOfView;
-	}
-	
+		
 	public VisionDetector vision(){
 		return camera;
 	}

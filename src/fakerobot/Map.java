@@ -2,6 +2,7 @@ package fakerobot;
 
 import java.awt.BasicStroke;
 import java.awt.Color;
+import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
@@ -19,8 +20,10 @@ import math.geom2d.conic.Circle2D;
 import math.geom2d.line.LineSegment2D;
 import math.geom2d.line.Ray2D;
 import math.geom2d.line.StraightLine2D;
+import math.geom2d.polygon.Polygons2D;
 import math.geom2d.polygon.Polyline2D;
 import math.geom2d.polygon.Rectangle2D;
+import math.geom2d.polygon.SimplePolygon2D;
 import math.geom2d.AffineTransform2D;
 import math.geom2d.Angle2D;
 import math.geom2d.Point2D;
@@ -37,23 +40,29 @@ public class Map {
 	private List<LineSegment2D> yellowWalls = new ArrayList<LineSegment2D>();
 	private LineSegment2D silo;
 
-	private Rectangle2D position = new Rectangle2D(2, 2, 5, 5);;
+	private SimplePolygon2D position = Polygons2D.createOrientedRectangle(
+			new Point2D(5, 5), 7, 5, 0);
 	private double odometryDistance = 0;
 	private double odometryAngle = 0;
 	private double angleOfView = 50 * Math.PI / 180;
 	private double clock = 0.1;// in seconds
-	private double noiseForward = 1;
-	private double noiseAngle = 1;
+
+	private double noiseForward = 0.2;
+	private double noiseAngle = 0.05;
 	private double noiseIR = 1;
-	private double maxSpeed = 3;
-	private double maxAngularSpeed = Math.PI / 2;
+
+	private double maxSpeed = 8;
+	private double maxAngularSpeed = Math.PI / 2 / 10;
+
 	private Random noiseGenerator = new Random();
+
+	private double length, width;
 
 	// useful things
 	LineSegment2D frontSide;
 	StraightLine2D slaveL;
 	Ray2D direction, cameraRay;
-	Point2D head;
+	Point2D head, center;
 	double robotAngle, cameraAngle;
 	Iterator<Point2D> points;
 
@@ -61,7 +70,8 @@ public class Map {
 	 * Constructor
 	 * 
 	 * @param mazeXcoords
-	 *            coordinates of maze vertices
+	 *            coordinates of maze vertices !first and last vertex have to be
+	 *            the same to close the maze
 	 * @param mazeYcoords
 	 * @param redBallXcoords
 	 *            coordinates of red balls
@@ -124,8 +134,11 @@ public class Map {
 	 *            starting y position
 	 */
 	public void setLocation(double width, double height, double startX,
-			double startY) {
-		position = new Rectangle2D(width, height, startY, startY);
+			double startY, double angle) {
+		position = Polygons2D.createOrientedRectangle(new Point2D(startX,
+				startY), height, width, angle);
+		length = height;
+		this.width = width;
 	}
 
 	public double noisedIR(double value) {
@@ -140,16 +153,27 @@ public class Map {
 		return value + noiseGenerator.nextGaussian() * noiseAngle;
 	}
 
+	public void updatePosition() {
+
+		// the head of the robot
+		head = Point2D.midPoint(position.vertex(1), position.vertex(2));
+		center = position.centroid();
+
+		// we find the direction as a ray
+		direction = new Ray2D(center, head);
+		robotAngle = direction.horizontalAngle();
+	}
+
 	/**
-	 * finds the distance to the closest wall of the maze
-	 * 
+	 * finds the distance from the source to the closest wall of the maze in the
+	 * direction of the ray
+	 * @param source
 	 * @param ray
 	 * @return the distance to the closes wall
 	 */
 
-	double mazeIntersect(Ray2D ray) {
+	double mazeIntersect(Point2D source, Ray2D ray) {
 		points = maze.intersections(ray).iterator();
-		Point2D source = ray.firstPoint();
 		double minDistance = Double.MAX_VALUE;
 		Point2D closestPoint = new Point2D();
 		for (Point2D point = points.next(); point != null; point = points
@@ -167,26 +191,34 @@ public class Map {
 	 * @param speed
 	 * @param angularSpeed
 	 */
-	public void move(double speed, double angularSpeed) {
+	public void move(double speedC, double angularSpeedC) {
 
+		updatePosition();
 		// calculate actual speed
-		double v = Math.max(speed, maxSpeed);
-		double w = Math.max(angularSpeed, maxAngularSpeed);
+		double v = speedC * maxSpeed;
+		double w = angularSpeedC * maxAngularSpeed;
+		System.out.println(w);
 
 		// calculate the movement according to y and x
-		double y = noisedForward(v / w * (1 - Math.cos(w * clock)));
-		double x = noisedForward(v / w * (1 - Math.cos(w * clock)));
+		double x, y;
+		if (w == 0)
+			w = 0.00000001;
 
+		// hardcore math model for movement
+		y = noisedForward(v / w
+				* (Math.cos(robotAngle) - Math.cos(robotAngle + w)));
+		x = noisedForward(v / w
+				* (Math.sin(robotAngle + w) - Math.sin(robotAngle)));
+
+		System.out.println(x + " " + y);
 		// calculate the required translation and translation
-		double rotation = noisedAngle(w * clock);
+		double rotation = noisedAngle(w);
 		Vector2D translation = new Vector2D(x, y);
-
+		System.out.println(rotation);
 		// actually move the robot
-		AffineTransform2D movement = AffineTransform2D
-				.createTranslation(translation);
-		position.transform(movement);
-		movement = AffineTransform2D.createRotation(rotation);
-		position.transform(movement);
+		position = Polygons2D.createOrientedRectangle(new Point2D(center.x()
+				+ x, center.y() + y), length, width, robotAngle + rotation);
+		System.out.println(position.centroid());
 
 		// update odometry
 		odometryDistance = noisedForward(Math.sqrt(x * x + y * y));
@@ -201,18 +233,8 @@ public class Map {
 	 */
 	public void checkColors(VisionDetector detector) {
 
-		// get the front side of the robot
-		frontSide = position.edges().iterator().next();
-
-		// direction's line is the median of the front side
-		slaveL = frontSide.getMedian();
-		robotAngle = slaveL.horizontalAngle();
-
-		// the head of the robot
-		head = frontSide.intersection(slaveL);
-
-		// we find the direction as a ray
-		direction = new Ray2D(head, robotAngle);
+		// calculate different position arguments
+		updatePosition();
 
 		// now with small angle steps we look if we see something
 		for (int k = -100; k < 100; k++) {
@@ -222,7 +244,7 @@ public class Map {
 
 			// calculate the distance of the ray to the first wall
 			// this is to avoid seeing objects behind walls
-			double distanceToMazeWall = this.mazeIntersect(cameraRay);
+			double distanceToMazeWall = this.mazeIntersect(head, cameraRay);
 
 			// check if the ray intersects any red balls
 			for (Circle2D redBall : redBalls) {
@@ -285,49 +307,50 @@ public class Map {
 
 	public void updateIRs(List<Double> readings) {
 		Iterator<Point2D> vertices = position.vertices().iterator();
-		// get the front side of the robot
-		frontSide = position.edges().iterator().next();
 
-		// direction's line is the median of the front side
-		slaveL = frontSide.getMedian();
-		robotAngle = slaveL.horizontalAngle();
-
-		// get the needed vertices
-
-		// the head of the robot
-		head = frontSide.intersection(slaveL);
+		updatePosition();
 
 		// corners
-		Point2D v1 = vertices.next();
-		Point2D v2 = vertices.next();
-		Point2D v3 = vertices.next();
-		Point2D v4 = vertices.next();
-		Point2D robotCenter = position.centroid();
+		Point2D v1 = position.vertex(2);
+		Point2D v2 = position.vertex(1);
+		Point2D v3 = position.vertex(0);
+		Point2D v4 = position.vertex(3);
 
 		// create rays for each of the sensors
 		List<Ray2D> irs = new ArrayList<Ray2D>();
-		irs.add(new Ray2D(robotCenter, v1));
-		irs.add(new Ray2D(robotCenter, head));
-		irs.add(new Ray2D(robotCenter, v2));
+		List<Point2D> sources = new ArrayList<Point2D>();
+		irs.add(new Ray2D(center, v1));
+		sources.add(head);
+		irs.add(new Ray2D(center, head));
+		sources.add(head);
+		irs.add(new Ray2D(center, v2));
+		sources.add(head);
 		irs.add(new Ray2D(v1, v2));
+		sources.add(v2);
 		irs.add(new Ray2D(v4, v3));
-		irs.add(new Ray2D(head, robotCenter));
+		sources.add(v3);
+		irs.add(new Ray2D(head, center));
+		sources.add(Point2D.midPoint(v3, v4));
 		irs.add(new Ray2D(v3, v4));
+		sources.add(v4);
 		irs.add(new Ray2D(v2, v1));
+		sources.add(v1);
 
 		// calculate and update readings
 		for (int i = 0; i < 8; i++) {
-			double distanceToMazeWall = this.mazeIntersect(irs.get(i));
+			double distanceToMazeWall = this.mazeIntersect(sources.get(i),
+					irs.get(i));
 			readings.set(i, noisedIR(distanceToMazeWall));
 		}
 
 	}
-	
+
 	/**
 	 * Simulates odometry readings
+	 * 
 	 * @return odometry readings
 	 */
-	public SimpleEntry<Double,Double> getOdometry(){
+	public SimpleEntry<Double, Double> getOdometry() {
 		return new SimpleEntry(odometryDistance, odometryAngle);
 	}
 
@@ -336,8 +359,9 @@ public class Map {
 	 * 
 	 * @param window
 	 */
-	public void draw(JPanel window) {
-		Graphics2D g = (Graphics2D) window.getGraphics();
+	public void draw(Graphics2D g) {
+		updatePosition();
+		// Graphics2D g = (Graphics2D) gg;
 		g.setColor(Color.blue);
 		g.setStroke(new BasicStroke(3));
 		maze.draw(g);
@@ -367,7 +391,10 @@ public class Map {
 		// draw the robot
 		g.setColor(Color.black);
 		position.draw(g);
+		g.setColor(Color.red);
+		g.setStroke(new BasicStroke(10));
 		head.draw(g);
+		System.out.println("printed");
 
 	}
 
