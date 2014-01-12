@@ -42,14 +42,22 @@ public class Map {
 
 	private SimplePolygon2D position = Polygons2D.createOrientedRectangle(
 			new Point2D(5, 5), 7, 5, 0);
+
+	// information to get from the robot
 	private double odometryDistance = 0;
 	private double odometryAngle = 0;
+	
+	private int ballsCollected = 0;
+	private int redBallsCollected = 0;
+	private int greenBallsCollected = 0;
+	
+	
 	private double angleOfView = 50 * Math.PI / 180;
 	private double clock = 0.1;// in seconds
 
 	private double noiseForward = 0.2;
 	private double noiseAngle = 0.05;
-	private double noiseIR = 1;
+	private double noiseIR = 0.1;
 
 	private double maxSpeed = 8;
 	private double maxAngularSpeed = Math.PI / 2 / 10;
@@ -65,6 +73,7 @@ public class Map {
 	Point2D head, center;
 	double robotAngle, cameraAngle;
 	Iterator<Point2D> points;
+	MapGUI mygui;
 
 	/**
 	 * Constructor
@@ -110,6 +119,8 @@ public class Map {
 			this.yellowWalls.add(maze.edge(reactors[i]));
 		}
 		this.silo = maze.edge(silo);
+
+		mygui = new MapGUI(this);
 	}
 
 	/**
@@ -167,6 +178,7 @@ public class Map {
 	/**
 	 * finds the distance from the source to the closest wall of the maze in the
 	 * direction of the ray
+	 * 
 	 * @param source
 	 * @param ray
 	 * @return the distance to the closes wall
@@ -176,10 +188,13 @@ public class Map {
 		points = maze.intersections(ray).iterator();
 		double minDistance = Double.MAX_VALUE;
 		Point2D closestPoint = new Point2D();
-		for (Point2D point = points.next(); point != null; point = points
-				.next()) {
+
+		while (points.hasNext()) {
+			Point2D point = points.next();
+
 			if (source.distance(point) < minDistance)
 				closestPoint = point;
+			minDistance = source.distance(point);
 		}
 
 		return source.distance(closestPoint);
@@ -197,7 +212,6 @@ public class Map {
 		// calculate actual speed
 		double v = speedC * maxSpeed;
 		double w = angularSpeedC * maxAngularSpeed;
-		System.out.println(w);
 
 		// calculate the movement according to y and x
 		double x, y;
@@ -210,19 +224,62 @@ public class Map {
 		x = noisedForward(v / w
 				* (Math.sin(robotAngle + w) - Math.sin(robotAngle)));
 
-		System.out.println(x + " " + y);
 		// calculate the required translation and translation
 		double rotation = noisedAngle(w);
-		Vector2D translation = new Vector2D(x, y);
-		System.out.println(rotation);
+
 		// actually move the robot
 		position = Polygons2D.createOrientedRectangle(new Point2D(center.x()
 				+ x, center.y() + y), length, width, robotAngle + rotation);
-		System.out.println(position.centroid());
 
 		// update odometry
 		odometryDistance = noisedForward(Math.sqrt(x * x + y * y));
 		odometryAngle = noisedAngle(rotation);
+
+		// check if the robots collected any red balls
+		for (int i = 0; i < redBalls.size(); i++) {
+			Circle2D redBall = redBalls.get(i);
+			boolean touched = redBall
+					.intersections(
+							new LineSegment2D(position.vertex(2), position
+									.vertex(1))).iterator().hasNext();
+			if (touched) {
+				redBallsCollected++;
+				ballsCollected++;
+				redBalls.remove(i);
+			}
+		}
+
+		// check if the robots collected any green balls
+		for (int i = 0; i < greenBalls.size(); i++) {
+			Circle2D greenBall = greenBalls.get(i);
+			boolean touched =greenBall.intersections(
+							new LineSegment2D(position.vertex(2), position
+									.vertex(1))).iterator().hasNext();
+			if (touched) {
+				greenBallsCollected++;
+				ballsCollected++;
+				greenBalls.remove(i);
+			}
+		}
+
+		mygui.update();
+	}
+	
+	/**
+	 * Simulates the release of balls
+	 * @param howMany
+	 */
+	public void dumpRedBalls(int howMany){
+		redBallsCollected-=howMany;
+	}
+	
+
+	/**
+	 * Simulates the release of balls
+	 * @param howMany
+	 */
+	public void dumpGreenBalls(int howMany){
+		greenBallsCollected-=howMany;
 	}
 
 	/**
@@ -248,57 +305,88 @@ public class Map {
 
 			// check if the ray intersects any red balls
 			for (Circle2D redBall : redBalls) {
-				Point2D ballIntersection = redBall.intersections(cameraRay)
-						.iterator().next();
-				double distanceToBall = ballIntersection.distance(head);
+				boolean touched;
+				touched = redBall.intersections(cameraRay).iterator().hasNext();
+				if (touched) {
+					Point2D ballIntersection = redBall.intersections(cameraRay)
+							.iterator().next();
+					double distanceToBall = ballIntersection.distance(head);
 
-				// check if the object is not behind a wall
-				if (distanceToBall < distanceToMazeWall) {
-					detector.sawBall(Color.red, distanceToBall, cameraAngle);
+					// check if the object is not behind a wall
+					if (distanceToBall < distanceToMazeWall
+							&& distanceToBall < 90) {
+						detector.sawBall(Color.red, distanceToBall, cameraAngle);
+					}
 				}
 			}
 
 			// check green balls
 			for (Circle2D greenBall : greenBalls) {
-				Point2D ballIntersection = greenBall.intersections(cameraRay)
-						.iterator().next();
-				double distanceToBall = ballIntersection.distance(head);
-				if (distanceToBall < distanceToMazeWall) {
-					detector.sawBall(Color.green, distanceToBall, cameraAngle);
+				boolean touched;
+				touched = greenBall.intersections(cameraRay).iterator()
+						.hasNext();
+				if (touched) {
+					Point2D ballIntersection = greenBall
+							.intersections(cameraRay).iterator().next();
+					double distanceToBall = ballIntersection.distance(head);
+					if (distanceToBall < distanceToMazeWall
+							&& distanceToBall < 90) {
+						detector.sawBall(Color.green, distanceToBall,
+								cameraAngle);
+					}
 				}
 			}
 
 			// check reactors
 			for (LineSegment2D reactor : reactors) {
-				Point2D reactorIntersection = reactor.intersections(cameraRay)
-						.iterator().next();
-				double distanceToReactor = reactorIntersection.distance(head);
-				if (distanceToReactor < distanceToMazeWall) {
-					detector.sawRectangle(Color.green, distanceToReactor,
-							cameraAngle);
+				boolean touched;
+				touched = reactor.intersections(cameraRay).iterator().hasNext();
+				if (touched) {
+					Point2D reactorIntersection = reactor
+							.intersections(cameraRay).iterator().next();
+					double distanceToReactor = reactorIntersection
+							.distance(head);
+					if (distanceToReactor < distanceToMazeWall
+							&& distanceToReactor < 90) {
+						detector.sawRectangle(Color.green, distanceToReactor,
+								cameraAngle);
+					}
 				}
 			}
 
 			// check yellow walls
 			for (LineSegment2D yellow : yellowWalls) {
-				Point2D yellowIntersection = yellow.intersections(cameraRay)
-						.iterator().next();
-				double distanceToYellowWall = yellowIntersection.distance(head);
-				if (distanceToYellowWall < distanceToMazeWall) {
-					detector.sawRectangle(Color.yellow, distanceToYellowWall,
-							cameraAngle);
+				boolean touched;
+				touched = yellow.intersections(cameraRay).iterator().hasNext();
+				if (touched) {
+					Point2D yellowIntersection = yellow
+							.intersections(cameraRay).iterator().next();
+					double distanceToYellowWall = yellowIntersection
+							.distance(head);
+					if (distanceToYellowWall < distanceToMazeWall
+							&& distanceToYellowWall < 90) {
+						detector.sawRectangle(Color.yellow,
+								distanceToYellowWall, cameraAngle);
+					}
+				}
+
+				// check silo
+
+				touched = silo.intersections(cameraRay).iterator().hasNext();
+				if (touched) {
+					Point2D siloIntersection = silo.intersections(cameraRay)
+							.iterator().next();
+					double distanceToYellowWall = siloIntersection
+							.distance(head);
+					if (distanceToYellowWall < distanceToMazeWall
+							&& distanceToYellowWall < 90) {
+						detector.sawRectangle(Color.red, distanceToYellowWall,
+								cameraAngle);
+					}
 				}
 			}
-
-			// check silo
-			Point2D siloIntersection = silo.intersections(cameraRay).iterator()
-					.next();
-			double distanceToYellowWall = siloIntersection.distance(head);
-			if (distanceToYellowWall < distanceToMazeWall) {
-				detector.sawRectangle(Color.red, distanceToYellowWall,
-						cameraAngle);
-			}
 		}
+
 	}
 
 	/**
@@ -338,8 +426,13 @@ public class Map {
 
 		// calculate and update readings
 		for (int i = 0; i < 8; i++) {
+
 			double distanceToMazeWall = this.mazeIntersect(sources.get(i),
 					irs.get(i));
+			if (distanceToMazeWall > 120 || distanceToMazeWall < 10) {
+				distanceToMazeWall = -1.0;
+			}
+			;
 			readings.set(i, noisedIR(distanceToMazeWall));
 		}
 
@@ -352,6 +445,29 @@ public class Map {
 	 */
 	public SimpleEntry<Double, Double> getOdometry() {
 		return new SimpleEntry(odometryDistance, odometryAngle);
+	}
+	
+	public int ballsCollected(){
+		ballsCollected=0;
+		return ballsCollected;
+	}
+
+	/**
+	 * Tells how many red balls where collected
+	 * 
+	 * @return number of balls
+	 */
+	public int redBallsCollected() {
+		return redBallsCollected;
+	}
+	
+	/**
+	 * Tells how many red balls where collected
+	 * 
+	 * @return number of balls
+	 */
+	public int greenBallsCollected() {
+		return greenBallsCollected;
 	}
 
 	/**
@@ -392,7 +508,7 @@ public class Map {
 		g.setColor(Color.black);
 		position.draw(g);
 		g.setColor(Color.red);
-		g.setStroke(new BasicStroke(10));
+		g.setStroke(new BasicStroke(30));
 		head.draw(g);
 		System.out.println("printed");
 

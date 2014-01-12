@@ -1,37 +1,44 @@
 package fakerobot;
 
+import java.util.List;
+import java.util.ArrayList;
+
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 
 import org.junit.Test;
 
+import vision.detector.VisionDetector;
+
 public class MapTest {
 
-	public static Map createMap1() {
-		double[] mazex = { 200, 100, 200, 0, 600, 600, 400,200 };
-		double[] mazey = { 500, 400, 300, 100, 0, 500, 200,500 };
-		int[] reactors = { 0 };
-		int[] react = {};
-		double[] redBallsX = { 200, 100 };
-		double[] redBallsY = { 400, 100 };
-		double[] greenBallsX = { 500 };
-		double[] greenBallsY = { 300 };
-		Map map = new Map(mazex, mazey, redBallsX, redBallsY, greenBallsX,
-				greenBallsY, 5, reactors, 1, react);
-		map.setLocation(40, 60, 300, 100,Math.PI/2);
-		return map;
-	}
 
-	public static void main(String[] args) {
+	@Test
+	public void Test0(){
 		SwingUtilities.invokeLater(new Runnable() {
 			@Override
 			public void run() {
-				Map map = createMap1();
+				Map map = SampleMaps.createMap1();
 				MapGUI gui = new MapGUI(map);
-				for (int i=0; i<10; i++) map.move(0, 1);
+				for (int i=0; i<10; i++) map.move(0.5, 0);
 				MapGUI gui1=new MapGUI(map);
 			}
 		});
 	}
+	
+	@Test
+	public void TestIR(){
+		List<Double> irs=new ArrayList<Double>();
+		for (int i=0; i<8; i++) irs.add(0.0);
+		Map map = SampleMaps.createMap1();
+		map.updateIRs(irs);
+		System.out.println(irs);
+		VisionDetector det=new VisionDetector();
+		map.checkColors(det);
+		System.out.println(det.seesSomething());
+		System.out.println(det.seesRedBall());
+	}
+	
+	
 }
