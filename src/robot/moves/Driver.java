@@ -8,15 +8,17 @@ public class Driver {
 	double speed,angularSpeed;
 	SerialPort port;
 	
-	public Driver(SerialPort port){
-		this.speedController=new PID(1,0,0.1);
-		this.angularSpeedController=new PID(1,0,0.1);
+	public Driver(double Kp1, double Ki1, double Kd1,double Kp2, double Ki2, double Kd2){
+		this.speedController=new PID(Kp1,Ki1,Kd1);
+		this.angularSpeedController=new PID(Kp2,Ki2,Kd2);
 	}
 	
-	public void move(double distance, double angle){
-		speed=speedController.next(distance);
-		angularSpeed=angularSpeedController.next(angle);
+	public double moveForward(double distance){
+		return speedController.next(distance);
 		
-		//TODO actually move the robot
+	}
+	
+	public double rotate(double angle){
+		return angularSpeedController.next(angle);
 	}
 }

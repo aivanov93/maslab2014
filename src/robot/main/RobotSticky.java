@@ -1,9 +1,13 @@
 package robot.main;
 
-import fakerobot.Map;
+import java.lang.Thread.State;
+
+import fakerobot.RobotSimulator;
 import fakerobot.SampleMaps;
+import global.Constants;
 import jssc.SerialPort;
 import robot.moves.Driver;
+import robot.sensors.RobotEnviroment;
 import robot.sensors.Sensors;
 import vision.detector.VisionDetector;
 
@@ -12,46 +16,87 @@ public class RobotSticky implements Robot {
 	/**
 	 * uses sensors to get readings from IRs
 	 */
-	private Sensors sensors;
+	private RobotEnviroment hardware;
 	/**
 	 * driver includes PID controllers and computes the required forward and
-	 * angular speeds
+	 * angular speeds (unitless 0.0 to 1.0 with respect to max speed)
 	 */
 	private Driver driver;
-	private SerialPort port;
+	/**
+	 * keeps all the readings from the camera
+	 */
 	private VisionDetector camera;
 
-	// simulation
-	private Map map;
+	/**
+	 * flag to know whether it's a simulation or no
+	 */
+	private boolean real;
 
-	public void openPort() {
-		// open the port for maple communication
-		try {
-			port = new SerialPort("/dev/ttyACM0");
-			port.openPort();
-			port.setParams(115200, 8, 1, 0);
-		} catch (Exception ex) {
-			System.out.println(ex);
-		}
+	/**
+	 * 
+	 */
+	private State state;
+	
+	private double[] irs = new double[Constants.numberOfIRs];
 
-	}
+	
 
 	public RobotSticky(boolean real) {
+		this.real = real;
+
 		// open port if not simulation
 		if (real) {
-			openPort();
+			
+
 		} else {
-			map = SampleMaps.createMap1();
+			hardware = SampleMaps.createMap1();
 		}
 
 		// initialize sensors, driver and camera
-		this.sensors = new Sensors(port);
-		this.driver = new Driver(port);
+		this.driver = new Driver(1.0, 0.0, 0.1, 1, 0.0, 0.1);
 		this.camera = new VisionDetector();
+	}
 
+	public VisionDetector camera() {
+		return camera;
 	}
 
 	public void update() {
-		sensors.updateReadings();
+		hardware.updateReadings(irs);
+		hardware.updateCamera(camera);
+
 	}
+
+	public int redBallsInside() {
+		return hardware.redBallsCollected();
+	}
+
+	public int greenBallsInside() {
+		return hardware.greenBallsCollected();
+	}
+
+	public void move( double distance, double angle) {
+
+	}
+
+	public double angleMoved() {
+		return 0.0;
+	}
+
+	public double distanceMoved() {
+		return 0.0;
+	}
+
+	public boolean seesWall() {
+		return false;
+	}
+	
+	public void setState(State state){
+		this.state=state;
+	}
+	
+	public State state(){
+		return state;
+	}
+
 }

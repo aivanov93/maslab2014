@@ -5,16 +5,19 @@ import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
+import java.lang.Thread.State;
 
 import javax.swing.JFrame;
+import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
 
 public class MapGUI extends JFrame {
 
 	Panel panel;
+	JLabel state;
 	private static final long serialVersionUID = 1L;
-	private Map map;
+	private RobotSimulator map;
 	BufferedImage image=new BufferedImage(800,800,BufferedImage.TYPE_3BYTE_BGR);
 	
 	private class Panel extends JPanel {
@@ -38,12 +41,17 @@ public class MapGUI extends JFrame {
 		panel.repaint();
 	}
 	
-	public MapGUI(Map map){
+	public void setState(State state){
+		this.state.setText(state.toString());
+	}
+	
+	public MapGUI(RobotSimulator map){
 		super();
 		this.map=map;
 		panel=new Panel();
-		JTextField j=new JTextField(10);
-		this.add(j);
+		JLabel j=new JLabel("State");
+		state=new JLabel("start");
+		this.add(j); this.add(state);
 		this.add(panel);
 		panel.repaint();
 		this.setPreferredSize(new Dimension(800, 800));

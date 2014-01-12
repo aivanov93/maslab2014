@@ -13,6 +13,8 @@ import java.util.Random;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 
+import robot.sensors.RobotEnviroment;
+
 import vision.detector.VisionDetector;
 
 import math.geom2d.conic.Circle2D;
@@ -32,7 +34,7 @@ import math.geom2d.Vector2D;
 /**
  * Represents the playing map
  */
-public class Map {
+public class RobotSimulator implements RobotEnviroment {
 	private Polyline2D maze;
 	private List<Circle2D> redBalls = new ArrayList<Circle2D>();
 	private List<Circle2D> greenBalls = new ArrayList<Circle2D>();
@@ -46,12 +48,11 @@ public class Map {
 	// information to get from the robot
 	private double odometryDistance = 0;
 	private double odometryAngle = 0;
-	
+
 	private int ballsCollected = 0;
 	private int redBallsCollected = 0;
 	private int greenBallsCollected = 0;
-	
-	
+
 	private double angleOfView = 50 * Math.PI / 180;
 	private double clock = 0.1;// in seconds
 
@@ -98,7 +99,7 @@ public class Map {
 	 * @param yellowWalls
 	 *            the same thing
 	 */
-	public Map(double[] mazeXcoords, double[] mazeYcoords,
+	public RobotSimulator(double[] mazeXcoords, double[] mazeYcoords,
 			double[] redBallXcoords, double[] redBallYcoords,
 			double[] greenBallXcoords, double[] greenBallYcoords,
 			double ballRadius, int[] reactors, int silo, int[] yellowWalls) {
@@ -252,7 +253,8 @@ public class Map {
 		// check if the robots collected any green balls
 		for (int i = 0; i < greenBalls.size(); i++) {
 			Circle2D greenBall = greenBalls.get(i);
-			boolean touched =greenBall.intersections(
+			boolean touched = greenBall
+					.intersections(
 							new LineSegment2D(position.vertex(2), position
 									.vertex(1))).iterator().hasNext();
 			if (touched) {
@@ -264,22 +266,23 @@ public class Map {
 
 		mygui.update();
 	}
-	
-	/**
-	 * Simulates the release of balls
-	 * @param howMany
-	 */
-	public void dumpRedBalls(int howMany){
-		redBallsCollected-=howMany;
-	}
-	
 
 	/**
 	 * Simulates the release of balls
+	 * 
 	 * @param howMany
 	 */
-	public void dumpGreenBalls(int howMany){
-		greenBallsCollected-=howMany;
+	public void dumpRedBalls(int howMany) {
+		redBallsCollected -= howMany;
+	}
+
+	/**
+	 * Simulates the release of balls
+	 * 
+	 * @param howMany
+	 */
+	public void dumpGreenBalls(int howMany) {
+		greenBallsCollected -= howMany;
 	}
 
 	/**
@@ -288,7 +291,7 @@ public class Map {
 	 * @param robot
 	 *            our robot
 	 */
-	public void checkColors(VisionDetector detector) {
+	public void updateCamera(VisionDetector detector) {
 
 		// calculate different position arguments
 		updatePosition();
@@ -393,7 +396,7 @@ public class Map {
 	 * update IR readings
 	 */
 
-	public void updateIRs(List<Double> readings) {
+	public void updateReadings(double[] readings) {
 		Iterator<Point2D> vertices = position.vertices().iterator();
 
 		updatePosition();
@@ -432,8 +435,8 @@ public class Map {
 			if (distanceToMazeWall > 120 || distanceToMazeWall < 10) {
 				distanceToMazeWall = -1.0;
 			}
-			;
-			readings.set(i, noisedIR(distanceToMazeWall));
+
+			readings[i] = noisedIR(distanceToMazeWall);
 		}
 
 	}
@@ -446,9 +449,9 @@ public class Map {
 	public SimpleEntry<Double, Double> getOdometry() {
 		return new SimpleEntry(odometryDistance, odometryAngle);
 	}
-	
-	public int ballsCollected(){
-		ballsCollected=0;
+
+	public int ballsCollected() {
+		ballsCollected = 0;
 		return ballsCollected;
 	}
 
@@ -460,7 +463,7 @@ public class Map {
 	public int redBallsCollected() {
 		return redBallsCollected;
 	}
-	
+
 	/**
 	 * Tells how many red balls where collected
 	 * 
