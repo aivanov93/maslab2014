@@ -12,15 +12,6 @@ import vision.detector.ColorObject.Type;
 
 public class VisionDetector {
 	
-	HashMap<Color,Boolean>  sawBall=new HashMap<Color,Boolean>();
-	HashMap<Color,Boolean>  sawLabel=new HashMap<Color,Boolean>();
-	HashMap<Color,SimpleEntry<Double,Double>>  ball=new HashMap<Color,SimpleEntry<Double,Double>>();
-	HashMap<Color,SimpleEntry<Double,Double>>  label=new HashMap<Color,SimpleEntry<Double,Double>>();
-	
-	//point in polar coordinates!!
-	HashMap<Color,Point>  ballCoordinates=new HashMap<Color,Point>();
-	HashMap<Color,Point>  labelCoordinates=new HashMap<Color,Point>();
-	
 	HashMap<Type,ColorObject>  objects;
 	
 	public VisionDetector(){
@@ -32,7 +23,8 @@ public class VisionDetector {
 	}
 	
 	/**
-	 * check if there was a similar object seen and if yes see if this one is closer
+	 * Saves the given detected object if needed
+	 * Checks if there was a similar object seen and if yes looks if this one is closer
 	 * @param object
 	 */
 	public synchronized void putObject(ColorObject object){
@@ -47,6 +39,12 @@ public class VisionDetector {
 		}
 	}
 	
+	/**
+	 * Analyzes a new ball seen
+	 * @param color 
+	 * @param dist
+	 * @param angle
+	 */
 	public synchronized void sawBall(Color color, double dist, double angle){
 		Type type;
 		if (color==Color.red){

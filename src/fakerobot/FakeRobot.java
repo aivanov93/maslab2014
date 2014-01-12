@@ -37,7 +37,9 @@ import math.geom2d.polygon.Rectangle2D;
 public class FakeRobot implements Robot {
 	private Sensors sensors;
 	private Driver driver;
-	private Vision camera;
+	private VisionDetector camera;
+	private List<Double> irs;
+	private Rectangle2D position;
 	
 	private double angleOfView=50 *Math.PI/180;
 	
@@ -71,6 +73,14 @@ public class FakeRobot implements Robot {
 	
 	public double angleOfView(){
 		return angleOfView;
+	}
+	
+	public VisionDetector vision(){
+		return camera;
+	}
+	
+	public List<Double> irs(){
+		return irs;
 	}
 	
 }
