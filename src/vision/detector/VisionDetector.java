@@ -1,4 +1,6 @@
 package vision.detector;
+import global.Constants;
+
 import java.awt.Color;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.HashMap;
@@ -46,6 +48,7 @@ public class VisionDetector {
 	 * @param angle
 	 */
 	public synchronized void sawBall(Color color, double dist, double angle){
+		if (angle>Math.PI) angle-=Math.PI*2;
 		Type type;
 		if (color==Color.red){
 			type=Type.RedBall;
@@ -56,6 +59,7 @@ public class VisionDetector {
 	}
 		
 	public synchronized void sawRectangle(Color color, double dist, double angle){
+		if (angle>Math.PI) angle-=Math.PI*2;
 		Type type;
 		if (color==Color.red){
 			type=Type.Silo;
@@ -75,6 +79,29 @@ public class VisionDetector {
 		return objects.get(Type.RedBall)!=null || objects.get(Type.GreenBall)!=null;
 	}
 	
+	public synchronized boolean seesBigBall(){
+		ColorObject bigBall=biggestBall();
+		if (bigBall==null){
+			return false;
+		} else {
+			return bigBall.distance()<Constants.siloBallDistance;
+		}
+		
+	}
+	
+	public synchronized ColorObject biggestBall(){
+		ColorObject bigBall=null;
+		if (seesRedBall()){
+			bigBall=redBall();
+		}
+
+		if (seesGreenBall()){
+			if (bigBall==null) bigBall=greenBall();
+			else if (bigBall.distance()<greenBall().distance())	bigBall=greenBall();
+		}
+		return bigBall;
+	}
+	
 	public synchronized boolean seesRedBall(){
 		return objects.get(Type.RedBall)!=null;
 	}
@@ -91,6 +118,9 @@ public class VisionDetector {
 		return objects.get(Type.Reactor)!=null;
 	}
 	
+	public synchronized boolean seesYellowWall(){
+		return objects.get(Type.YellowWall)!=null;
+	}
 	public synchronized ColorObject redBall(){
 		return objects.get(Type.RedBall);
 	}
@@ -105,5 +135,9 @@ public class VisionDetector {
 
 	public synchronized ColorObject reactor(){
 		return objects.get(Type.Reactor);
+	}
+	
+	public synchronized ColorObject yellowWall(){
+		return objects.get(Type.YellowWall);
 	}
 }

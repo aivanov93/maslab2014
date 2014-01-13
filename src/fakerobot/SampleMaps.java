@@ -12,7 +12,7 @@ public class SampleMaps {
 		double[] greenBallsY = { 300 };
 		RobotSimulator map = new RobotSimulator(mazex, mazey, redBallsX, redBallsY, greenBallsX,
 				greenBallsY, 5, reactors, 1, react);
-		map.setLocation(40, 60, 300, 100,Math.PI);
+		map.setLocation(40, 60, 200, 400,Math.PI);
 		return map;
 	}
 }

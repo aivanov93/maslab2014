@@ -6,6 +6,7 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
@@ -14,6 +15,7 @@ import javax.swing.JFrame;
 import javax.swing.JPanel;
 
 import robot.sensors.RobotEnviroment;
+import game.StateMachine.State;
 
 import vision.detector.VisionDetector;
 
@@ -60,12 +62,16 @@ public class RobotSimulator implements RobotEnviroment {
 	private double noiseAngle = 0.05;
 	private double noiseIR = 0.1;
 
-	private double maxSpeed = 8;
+	private double maxSpeed = 3;
 	private double maxAngularSpeed = Math.PI / 2 / 10;
 
 	private Random noiseGenerator = new Random();
 
 	private double length, width;
+	
+	private int score=0;
+
+	private HashMap<LineSegment2D, SimpleEntry<Integer, Integer>> reactorBalls=new HashMap<LineSegment2D, SimpleEntry<Integer, Integer>>();
 
 	// useful things
 	LineSegment2D frontSide;
@@ -114,7 +120,9 @@ public class RobotSimulator implements RobotEnviroment {
 					greenBallYcoords[i], ballRadius));
 		}
 		for (int i = 0; i < reactors.length; i++) {
-			this.reactors.add(maze.edge(reactors[i]));
+			LineSegment2D reactor=maze.edge(reactors[i]);
+			this.reactors.add(reactor);
+			reactorBalls.put(reactor, new SimpleEntry<Integer,Integer>(0, 0));
 		}
 		for (int i = 0; i < yellowWalls.length; i++) {
 			this.yellowWalls.add(maze.edge(reactors[i]));
@@ -277,12 +285,62 @@ public class RobotSimulator implements RobotEnviroment {
 	}
 
 	/**
-	 * Simulates the release of balls
+	 * Simulates the release of balls in the top of the reactor
 	 * 
 	 * @param howMany
 	 */
-	public void dumpGreenBalls(int howMany) {
+	public void dumpGreenBallsTop(int howMany) {
 		greenBallsCollected -= howMany;
+		updatePosition();
+		// check reactors
+		boolean touched=false;
+		for (LineSegment2D reactor : reactorBalls.keySet()) {
+			touched = reactor.intersections(direction).iterator().hasNext();
+			if (touched) {
+				int top=reactorBalls.get(reactor).getKey();
+				int bottom=reactorBalls.get(reactor).getValue();
+				top++; reactorBalls.put(reactor, new SimpleEntry(top,bottom));
+			}
+		}
+		if (!touched){
+			
+		}
+		updateScores();
+	}
+
+	/**
+	 * Simulates the release of balls in the bottom of the reactor
+	 * 
+	 * @param howMany
+	 */
+	public void dumpGreenBallsBottom(int howMany) {
+		greenBallsCollected -= howMany;
+		updatePosition();
+		boolean touched=false;
+		for (LineSegment2D reactor : reactorBalls.keySet()) {
+			touched = reactor.intersections(direction).iterator().hasNext();
+			if (touched) {
+				int top=reactorBalls.get(reactor).getKey();
+				int bottom=reactorBalls.get(reactor).getValue();
+				bottom++; reactorBalls.put(reactor, new SimpleEntry<Integer,Integer>(top,bottom));
+			}
+		}
+		if (!touched){
+			
+		}
+		updateScores();
+	}
+	
+	public void updateScores(){
+		for (LineSegment2D reactor : reactorBalls.keySet()) {
+			int top=reactorBalls.get(reactor).getKey();
+			int bottom=reactorBalls.get(reactor).getValue();
+			int bonus1=0, bonus2=0;
+			if (top>0) bonus1=10;
+			if (bottom>0) bonus2=10;
+			score+=top*7+bottom*3+bonus1+bonus2;
+			mygui.setScore(score);
+		}
 	}
 
 	/**
@@ -293,9 +351,10 @@ public class RobotSimulator implements RobotEnviroment {
 	 */
 	public void updateCamera(VisionDetector detector) {
 
+		detector.reset();
 		// calculate different position arguments
 		updatePosition();
-
+	
 		// now with small angle steps we look if we see something
 		for (int k = -100; k < 100; k++) {
 
@@ -313,12 +372,11 @@ public class RobotSimulator implements RobotEnviroment {
 				if (touched) {
 					Point2D ballIntersection = redBall.intersections(cameraRay)
 							.iterator().next();
-					double distanceToBall = ballIntersection.distance(head);
-
+					double distanceToBall = ballIntersection.distance(head);				
 					// check if the object is not behind a wall
 					if (distanceToBall < distanceToMazeWall
 							&& distanceToBall < 90) {
-						detector.sawBall(Color.red, distanceToBall, cameraAngle);
+						detector.sawBall(Color.red, distanceToBall, cameraAngle-robotAngle);
 					}
 				}
 			}
@@ -335,7 +393,7 @@ public class RobotSimulator implements RobotEnviroment {
 					if (distanceToBall < distanceToMazeWall
 							&& distanceToBall < 90) {
 						detector.sawBall(Color.green, distanceToBall,
-								cameraAngle);
+								cameraAngle-robotAngle);
 					}
 				}
 			}
@@ -349,10 +407,10 @@ public class RobotSimulator implements RobotEnviroment {
 							.intersections(cameraRay).iterator().next();
 					double distanceToReactor = reactorIntersection
 							.distance(head);
-					if (distanceToReactor < distanceToMazeWall
+					if (distanceToReactor <= distanceToMazeWall
 							&& distanceToReactor < 90) {
 						detector.sawRectangle(Color.green, distanceToReactor,
-								cameraAngle);
+								cameraAngle-robotAngle);
 					}
 				}
 			}
@@ -366,28 +424,29 @@ public class RobotSimulator implements RobotEnviroment {
 							.intersections(cameraRay).iterator().next();
 					double distanceToYellowWall = yellowIntersection
 							.distance(head);
-					if (distanceToYellowWall < distanceToMazeWall
+					if (distanceToYellowWall <= distanceToMazeWall
 							&& distanceToYellowWall < 90) {
 						detector.sawRectangle(Color.yellow,
-								distanceToYellowWall, cameraAngle);
-					}
-				}
-
-				// check silo
-
-				touched = silo.intersections(cameraRay).iterator().hasNext();
-				if (touched) {
-					Point2D siloIntersection = silo.intersections(cameraRay)
-							.iterator().next();
-					double distanceToYellowWall = siloIntersection
-							.distance(head);
-					if (distanceToYellowWall < distanceToMazeWall
-							&& distanceToYellowWall < 90) {
-						detector.sawRectangle(Color.red, distanceToYellowWall,
-								cameraAngle);
+								distanceToYellowWall,cameraAngle-robotAngle);
 					}
 				}
 			}
+				// check silo
+
+			boolean touched = silo.intersections(cameraRay).iterator().hasNext();
+				if (touched) {
+					
+					Point2D siloIntersection = silo.intersections(cameraRay)
+							.iterator().next();
+					double distanceToSilo = siloIntersection
+							.distance(head);
+					if (distanceToSilo <= distanceToMazeWall
+							&& distanceToSilo < 90) {						
+						detector.sawRectangle(Color.red, distanceToSilo,
+								cameraAngle-robotAngle);
+					}
+				}
+			
 		}
 
 	}
@@ -397,8 +456,6 @@ public class RobotSimulator implements RobotEnviroment {
 	 */
 
 	public void updateReadings(double[] readings) {
-		Iterator<Point2D> vertices = position.vertices().iterator();
-
 		updatePosition();
 
 		// corners
@@ -446,8 +503,12 @@ public class RobotSimulator implements RobotEnviroment {
 	 * 
 	 * @return odometry readings
 	 */
-	public SimpleEntry<Double, Double> getOdometry() {
-		return new SimpleEntry(odometryDistance, odometryAngle);
+	public double angleMoved() {
+		return odometryAngle;
+	}
+	
+	public double distanceMoved(){
+		return odometryDistance;
 	}
 
 	public int ballsCollected() {
@@ -455,12 +516,17 @@ public class RobotSimulator implements RobotEnviroment {
 		return ballsCollected;
 	}
 
+	public void collectSilo() {
+		ballsCollected++;
+		redBallsCollected++;
+	}
+
 	/**
 	 * Tells how many red balls where collected
 	 * 
 	 * @return number of balls
 	 */
-	public int redBallsCollected() {
+	public int redBallsInside() {
 		return redBallsCollected;
 	}
 
@@ -469,8 +535,12 @@ public class RobotSimulator implements RobotEnviroment {
 	 * 
 	 * @return number of balls
 	 */
-	public int greenBallsCollected() {
+	public int greenBallsInside() {
 		return greenBallsCollected;
+	}
+
+	public void setState(State state) {
+		mygui.setState(state);
 	}
 
 	/**

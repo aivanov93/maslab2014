@@ -1,5 +1,6 @@
 package robot.sensors;
 
+import game.StateMachine.State;
 import vision.detector.VisionDetector;
 import jssc.SerialPort;
 
@@ -20,10 +21,29 @@ public class RobotHardware implements RobotEnviroment{
 		this.port=port;
 	}
 	
-	public void updateReadings(double[] irs){
-		
-	}
+public void updateReadings(double[] irs){}
 	
-	public void updateCamera(VisionDetector detector){};
+	public void updateCamera(VisionDetector detector){}
+	
+	public int redBallsInside(){ return 0;}
+	
+	public int greenBallsInside(){ return 0;}
+	public int ballsCollected(){return 0;}
+	
+	public void move(double speed, double angularSpeed){}
+	
+	public void setState(State state){}
+	
+	public void collectSilo(){}
+	
+	public void dumpRedBalls(int n){}
+	
+	public void dumpGreenBallsTop(int n){}
+	
+	public void dumpGreenBallsBottom(int n){}
+	
+	public double distanceMoved(){return 1;}
+	
+	public double angleMoved(){return 1;}
 
 }

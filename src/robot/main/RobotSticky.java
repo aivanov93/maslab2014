@@ -1,6 +1,6 @@
 package robot.main;
 
-import java.lang.Thread.State;
+import game.StateMachine.State;
 
 import fakerobot.RobotSimulator;
 import fakerobot.SampleMaps;
@@ -8,7 +8,6 @@ import global.Constants;
 import jssc.SerialPort;
 import robot.moves.Driver;
 import robot.sensors.RobotEnviroment;
-import robot.sensors.Sensors;
 import vision.detector.VisionDetector;
 
 public class RobotSticky implements Robot {
@@ -66,17 +65,15 @@ public class RobotSticky implements Robot {
 		hardware.updateCamera(camera);
 
 	}
-
-	public int redBallsInside() {
-		return hardware.redBallsCollected();
-	}
-
-	public int greenBallsInside() {
-		return hardware.greenBallsCollected();
+	
+	public RobotEnviroment hardware(){
+		return hardware;
 	}
 
 	public void move( double distance, double angle) {
-
+		double forwardSpeed=driver.moveForward(distance);
+		double angularSpeed=driver.rotate(angle);
+		hardware.move(forwardSpeed, angularSpeed);
 	}
 
 	public double angleMoved() {
@@ -93,6 +90,7 @@ public class RobotSticky implements Robot {
 	
 	public void setState(State state){
 		this.state=state;
+		this.hardware.setState(state);
 	}
 	
 	public State state(){
