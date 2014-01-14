@@ -6,6 +6,7 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -14,8 +15,10 @@ import java.util.Random;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 
+import robot.sensors.IRSensors;
 import robot.sensors.RobotEnviroment;
 import game.StateMachine.State;
+import global.Constants;
 
 import vision.detector.VisionDetector;
 
@@ -47,6 +50,9 @@ public class RobotSimulator implements RobotEnviroment {
 	private SimplePolygon2D position = Polygons2D.createOrientedRectangle(
 			new Point2D(5, 5), 7, 5, 0);
 
+	
+	private List<Double> irs=Arrays.asList(0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0);
+	
 	// information to get from the robot
 	private double odometryDistance = 0;
 	private double odometryAngle = 0;
@@ -455,7 +461,7 @@ public class RobotSimulator implements RobotEnviroment {
 	 * update IR readings
 	 */
 
-	public void updateReadings(double[] readings) {
+	public void updateReadings(IRSensors irSensors) {
 		updatePosition();
 
 		// corners
@@ -489,11 +495,11 @@ public class RobotSimulator implements RobotEnviroment {
 
 			double distanceToMazeWall = this.mazeIntersect(sources.get(i),
 					irs.get(i));
-			if (distanceToMazeWall > 120 || distanceToMazeWall < 10) {
+			if (distanceToMazeWall > Constants.maxIRreading || distanceToMazeWall < Constants.minIRreading) {
 				distanceToMazeWall = -1.0;
 			}
 
-			readings[i] = noisedIR(distanceToMazeWall);
+			irSensors.set(i, noisedIR(distanceToMazeWall));
 		}
 
 	}
@@ -520,6 +526,10 @@ public class RobotSimulator implements RobotEnviroment {
 		ballsCollected++;
 		redBallsCollected++;
 	}
+	
+	public boolean seesWall(){
+		return false;
+	}
 
 	/**
 	 * Tells how many red balls where collected
@@ -542,6 +552,8 @@ public class RobotSimulator implements RobotEnviroment {
 	public void setState(State state) {
 		mygui.setState(state);
 	}
+	
+	
 
 	/**
 	 * draws the current state of the map

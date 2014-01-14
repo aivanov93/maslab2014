@@ -7,6 +7,7 @@ import fakerobot.SampleMaps;
 import global.Constants;
 import jssc.SerialPort;
 import robot.moves.Driver;
+import robot.sensors.IRSensors;
 import robot.sensors.RobotEnviroment;
 import vision.detector.VisionDetector;
 
@@ -36,7 +37,7 @@ public class RobotSticky implements Robot {
 	 */
 	private State state;
 	
-	private double[] irs = new double[Constants.numberOfIRs];
+	private IRSensors irs = new IRSensors(Constants.numberOfIRs);
 
 	
 
@@ -56,19 +57,30 @@ public class RobotSticky implements Robot {
 		this.camera = new VisionDetector();
 	}
 
+	/* **********************************************
+	 * ****** getters for main robot modules ********
+	 * *********************************************/
+	
 	public VisionDetector camera() {
 		return camera;
 	}
 
+	public RobotEnviroment hardware(){
+		return hardware;
+	}
+	
+	public IRSensors irs(){
+		return irs;
+	}
+	
+	
 	public void update() {
 		hardware.updateReadings(irs);
 		hardware.updateCamera(camera);
 
 	}
 	
-	public RobotEnviroment hardware(){
-		return hardware;
-	}
+	
 
 	public void move( double distance, double angle) {
 		double forwardSpeed=driver.moveForward(distance);

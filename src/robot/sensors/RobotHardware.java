@@ -21,7 +21,7 @@ public class RobotHardware implements RobotEnviroment{
 		this.port=port;
 	}
 	
-public void updateReadings(double[] irs){}
+public void updateReadings(IRSensors irs){}
 	
 	public void updateCamera(VisionDetector detector){}
 	

@@ -31,7 +31,7 @@ public class MapTest {
 	public void TestIR(){
 		double irs[]= new double[8];
 		RobotSimulator map = SampleMaps.createMap1();
-		map.updateReadings(irs);
+	//	map.updateReadings(irs);
 		System.out.println(irs);
 		VisionDetector det=new VisionDetector();
 		map.updateCamera(det);
