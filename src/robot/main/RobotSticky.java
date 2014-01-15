@@ -46,7 +46,7 @@ public class RobotSticky implements Robot {
 
 		// open port if not simulation
 		if (real) {
-			
+			hardware=
 
 		} else {
 			hardware = SampleMaps.createMap1();

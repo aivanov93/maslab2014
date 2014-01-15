@@ -42,8 +42,9 @@ public void updateReadings(IRSensors irs){}
 	
 	public void dumpGreenBallsBottom(int n){}
 	
+	
 	public double distanceMoved(){return 1;}
 	
 	public double angleMoved(){return 1;}
-
+     
 }
