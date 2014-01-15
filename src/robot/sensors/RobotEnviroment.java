@@ -46,6 +46,10 @@ public interface RobotEnviroment {
 	
 	public void dumpGreenBallsBottom(int n);
 	
+	/**
+	 * odometry
+	 * @return
+	 */
 	public double distanceMoved();
 	
 	public double angleMoved();

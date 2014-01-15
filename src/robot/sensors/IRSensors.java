@@ -9,7 +9,7 @@ import java.util.List;
 public class IRSensors {
 
 	public static enum Side {
-		Left, Right
+		Left, Right, Undecided
 	};
 
 	private List<Double> readings = new ArrayList<Double>();
@@ -22,6 +22,16 @@ public class IRSensors {
 
 	public void set(int index, double value) {
 		readings.set(index, value);
+	}
+	
+	private double cosineLaw(double side1, double side2, double angle){
+		return Math.sqrt(side1*side1+side2*side2-2*side1*side2*Math.cos(angle));
+	}
+	
+	private double angleCosineLaw(double side1, double side2, double side3){
+		double angle=Math.acos((side3*side3-side2*side2-side1*side1)/(2*side1*side2));
+		if (angle>Math.PI) angle=2*Math.PI-angle;
+		return angle;
 	}
 	
 	/**
@@ -46,19 +56,32 @@ public class IRSensors {
 	 *            which side is the wall on
 	 */
 	public double followWallAngle(Side side) {
-		double ir1, ir2;
+		double irSideTop, irSideBottom, irHeadAngled, coeff=1;
+		
+		// check on which side are we following the wall
 		if (side == Side.Left) {
-			ir2 = readings.get(7);
-			ir1 = readings.get(6);
+			irSideTop = readings.get(7);
+			irSideBottom = readings.get(6);
+			irHeadAngled= readings.get(0);
+			//this is to reverse the formula below
+			coeff=-1;
 		} else {
-			ir1 = readings.get(3);
-			ir2 = readings.get(4);
+			irSideTop = readings.get(3);
+			irSideBottom = readings.get(4);
+			irHeadAngled=readings.get(2);
 		}
-		if (ir1 == ir2)
-			ir1 += 0.00000001;
-
-		// return the angle between the wall and the robot
-		return Math.atan((ir1 - ir2) / Constants.robotLenght);
+		
+		double angle=0;
+		// if both irs have enough range return the angle between the wall and the robot
+		if (irSideTop>0 && irSideBottom>0){
+			angle=Math.atan(coeff*(irSideTop - irSideBottom) / Constants.sideIRspacing);
+		} else { // if the bottom side one is out of range
+			double height= irHeadAngled/Math.sin(Constants.angleBetweenTopIrs);	
+			double wallLength = this.cosineLaw(irSideTop, irHeadAngled, Constants.angleBetweenTopIrs);
+			angle=Math.acos(height/wallLength);
+			if (angleCosineLaw(wallLength, irSideTop, irHeadAngled)<0) angle*=-1;
+		} 
+		return angle;
 	}
 	
 	/**
@@ -67,9 +90,11 @@ public class IRSensors {
 	 */
 	public int smallestReading(){
 		int smallest=0;
+		double minDist=Double.MAX_VALUE;
 		for (int i=1; i<readings.size();i++){
-			if (readings.get(i)<readings.get(smallest)){
+			if (readings.get(i)<minDist && readings.get(i)>0){
 				smallest=i;
+				minDist=readings.get(i);
 			}
 		}
 		return smallest;
@@ -77,7 +102,7 @@ public class IRSensors {
 	
 	public double getCorrectedAngle(){
 		int smallest=smallestReading();
-		
+		if (smallest)
 		return 0.0;
 	}
 }

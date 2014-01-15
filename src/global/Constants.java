@@ -5,7 +5,8 @@ public class Constants {
 	public static int totalTime=5*60; //s
 	
 	public static double robotWidth=40;
-	public static double robotLenght=60;
+	public static double robotLength=60;
+
 	
 	/**
 	 * sensor related constants
@@ -13,6 +14,9 @@ public class Constants {
 	public static int numberOfIRs=8;
 	public static double minIRreading=10;
 	public static double maxIRreading=120;
+	public static double sideIRspacing=40;
+	
+	public static double angleBetweenTopIrs=Math.atan(robotLength/robotWidth);
 	
 	/**
 	 * some step constants
