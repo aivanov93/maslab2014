@@ -17,8 +17,8 @@ public class RobotHardware implements RobotEnviroment{
 			System.out.println(ex);
 		}
 	}
-	public RobotHardware(SerialPort port){
-		this.port=port;
+	public RobotHardware(){
+		
 	}
 	
 public void updateReadings(IRSensors irs){}

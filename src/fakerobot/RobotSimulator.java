@@ -465,33 +465,31 @@ public class RobotSimulator implements RobotEnviroment {
 		updatePosition();
 
 		// corners
-		Point2D v1 = position.vertex(2);
-		Point2D v2 = position.vertex(1);
-		Point2D v3 = position.vertex(0);
-		Point2D v4 = position.vertex(3);
+		Point2D vLeftTop = position.vertex(2);
+		Point2D vRightTop = position.vertex(1);
+		Point2D vRightBottom = position.vertex(0);
+		Point2D vLeftBottom = position.vertex(3);
+		Point2D vRightMiddle=Point2D.midPoint(vRightTop, vRightBottom);
+		Point2D vLeftMiddle=Point2D.midPoint(vLeftBottom, vLeftTop);
 
 		// create rays for each of the sensors
 		List<Ray2D> irs = new ArrayList<Ray2D>();
 		List<Point2D> sources = new ArrayList<Point2D>();
-		irs.add(new Ray2D(center, v1));
+		irs.add(new Ray2D(center, vLeftTop));
 		sources.add(head);
 		irs.add(new Ray2D(center, head));
 		sources.add(head);
-		irs.add(new Ray2D(center, v2));
+		irs.add(new Ray2D(center, vRightTop));
 		sources.add(head);
-		irs.add(new Ray2D(v1, v2));
-		sources.add(v2);
-		irs.add(new Ray2D(v4, v3));
-		sources.add(v3);
+		irs.add(new Ray2D(center, vRightMiddle));
+		sources.add(vRightMiddle);
 		irs.add(new Ray2D(head, center));
-		sources.add(Point2D.midPoint(v3, v4));
-		irs.add(new Ray2D(v3, v4));
-		sources.add(v4);
-		irs.add(new Ray2D(v2, v1));
-		sources.add(v1);
+		sources.add(Point2D.midPoint(vRightBottom, vLeftBottom));
+		irs.add(new Ray2D(center, vLeftMiddle));
+		sources.add(vLeftMiddle);
 
 		// calculate and update readings
-		for (int i = 0; i < 8; i++) {
+		for (int i = 0; i < irs.size(); i++) {
 
 			double distanceToMazeWall = this.mazeIntersect(sources.get(i),
 					irs.get(i));

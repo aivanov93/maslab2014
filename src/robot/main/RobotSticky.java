@@ -9,6 +9,7 @@ import jssc.SerialPort;
 import robot.moves.Driver;
 import robot.sensors.IRSensors;
 import robot.sensors.RobotEnviroment;
+import robot.sensors.RobotHardware;
 import vision.detector.VisionDetector;
 
 public class RobotSticky implements Robot {
@@ -46,7 +47,7 @@ public class RobotSticky implements Robot {
 
 		// open port if not simulation
 		if (real) {
-			hardware=
+			hardware=new RobotHardware();
 
 		} else {
 			hardware = SampleMaps.createMap1();

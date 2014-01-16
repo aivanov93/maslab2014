@@ -133,7 +133,7 @@ public class PathTestActiveRendering {
 //		TileArray tileArray = new TileArray(aabb.getBotLeft(), aabb.getTopRight(), 50);
 //		stationaryObstacles = new TileBag(tileArray, new Bag());
 		
-		maxConnectionDistanceBetweenObstacles = 300f;
+		maxConnectionDistanceBetweenObstacles = 2000f;
 		nodeConnector = new NodeConnector();
 
 		for (int i = 0; i < polygons.size(); i++){

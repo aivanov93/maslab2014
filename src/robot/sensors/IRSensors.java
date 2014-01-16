@@ -2,6 +2,7 @@ package robot.sensors;
 
 import global.Constants;
 
+import java.io.ObjectInputStream.GetField;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -18,6 +19,10 @@ public class IRSensors {
 		for (int i = 0; i < number; i++) {
 			readings.add(0.0);
 		}
+	}
+	
+	public double get(int number){
+		return readings.get(number);
 	}
 
 	public void set(int index, double value) {
@@ -102,7 +107,7 @@ public class IRSensors {
 	
 	public double getCorrectedAngle(){
 		int smallest=smallestReading();
-		if (smallest)
+		
 		return 0.0;
 	}
 }
