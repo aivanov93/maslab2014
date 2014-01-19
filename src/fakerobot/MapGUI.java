@@ -15,6 +15,11 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
 
+import robot.map.Localization;
+import robot.map.MapForSensors;
+import robot.map.MazeMap;
+import robot.sensors.RobotEnviroment;
+
 public class MapGUI extends JFrame {
 
 	Panel panel;
@@ -22,8 +27,9 @@ public class MapGUI extends JFrame {
 	JPanel topPanel;
 	
 	private static final long serialVersionUID = 1L;
-	private RobotSimulator map;
-	BufferedImage image=new BufferedImage(800,800,BufferedImage.TYPE_3BYTE_BGR);
+	private RobotEnviroment map;
+	private MazeMap mazeMap;
+	private Localization localization;
 	
 	private class Panel extends JPanel {
 		
@@ -31,14 +37,16 @@ public class MapGUI extends JFrame {
 		public void paintComponent(Graphics g){
 			Graphics2D g2 = (Graphics2D)g;
 			g2.setColor(Color.white);
-			g2.fillRect(0, 0, 800, 800);
+			g2.fillRect(0, 0, 1100, 1080);
 			g2.scale(1, -1);
-			g2.translate(0, -600);
+			g2.translate(0, -900);
 			map.draw(g2);	
+			localization.draw(g2);
+			mazeMap.draw(g2);
 		}
 		public Panel(){
 			super();
-			this.setPreferredSize(new Dimension(800, 800));
+			this.setPreferredSize(new Dimension(1100, 1080));
 		}
 		
 	}
@@ -60,8 +68,10 @@ public class MapGUI extends JFrame {
 		this.state.setText(state.toString());
 	}
 	
-	public MapGUI(RobotSimulator map){
+	public MapGUI(RobotEnviroment map, Localization localization, MazeMap mazeMap){
 		super();
+		this.localization=localization;
+		this.mazeMap=mazeMap;
 		this.map=map;
 		this.setLayout(new BoxLayout(this.getContentPane(), BoxLayout.PAGE_AXIS));
 		panel=new Panel();
@@ -104,7 +114,7 @@ public class MapGUI extends JFrame {
 		this.add(panel);		
 		panel.repaint();
 		
-		this.setPreferredSize(new Dimension(800, 800));
+		this.setPreferredSize(new Dimension(1100, 1080));
 		this.pack();
 		this.setVisible(true);
 		

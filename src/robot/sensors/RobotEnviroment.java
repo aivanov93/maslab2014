@@ -1,5 +1,11 @@
 package robot.sensors;
 
+import java.awt.Graphics2D;
+
+import robot.map.Position;
+
+
+
 import vision.detector.VisionDetector;
 import game.StateMachine.State;
 
@@ -50,8 +56,8 @@ public interface RobotEnviroment {
 	 * odometry
 	 * @return
 	 */
-	public double distanceMoved();
+	public void updateOdometry(Odometry odometry);
 	
-	public double angleMoved();
+	public void draw(Graphics2D g);
 	
 }

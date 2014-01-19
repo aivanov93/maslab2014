@@ -2,6 +2,7 @@ package game;
 
 import global.Constants;
 
+import java.util.ArrayList;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
@@ -10,17 +11,23 @@ import java.util.concurrent.TimeUnit;
 import javax.management.timer.Timer;
 
 import robot.main.RobotSticky;
+import straightedge.geom.KPoint;
 import vision.detector.ColorObject;
 
 public class StateMachine implements Runnable {
 	public static enum State {
-		Start, LookAround, GoBall, GoWall, GoForward, GoReactor, GoSilo, LookAway, DriveBlind, StickyState, ReactorDeposit, FollowWall, AlignSilo, Turn90, FindYellowWall, CollectSilo,
+		Start, LookAround, GoBall, GoWall, GoForward, GoReactor, GoSilo, LookAway, DriveBlind, StickyState, ReactorDeposit, FollowWall, AlignSilo, Turn90, FindYellowWall, CollectSilo, AllignReactor, GoObject,
+	}
+
+	public static enum Goal {
+		Silo, Reactor
 	}
 
 	private int i = 0;
 
 	private RobotSticky robot;
 
+	private ArrayList<KPoint> path;
 	/**
 	 * number of reactors whose position are known
 	 */
@@ -50,6 +57,10 @@ public class StateMachine implements Runnable {
 	private int failedToCollectBalls = 0;
 
 	/**
+	 * at each step tells whether a path finding algorithm should be run or not
+	 */
+	private boolean shouldSearch=false;
+	/**
 	 * steps timer used for different task
 	 */
 	private int stepsLeft = 0;
@@ -62,6 +73,8 @@ public class StateMachine implements Runnable {
 	 * used to account for vision problems
 	 */
 	private int stepsAllowedToMissObject = 0;
+
+	private Goal goal;
 
 	/**
 	 * To keep track of previous movement
@@ -110,11 +123,11 @@ public class StateMachine implements Runnable {
 		angle -= robot.angleMoved();
 		robot.move(distance, angle);
 	}
-	
-	public void correctMovement(double distance, double angle){
-		
+
+	public void correctMovement(double distance, double angle) {
+		if (Math.abs(angle)>Math.PI/8) distance=0;
 		robot.move(distance, angle);
-		//TODO implement wall correction
+		// TODO implement wall correction
 	}
 
 	/* *************************************************
@@ -123,18 +136,28 @@ public class StateMachine implements Runnable {
 	 * *************************************************
 	 */
 
-	@Override
-	public void run() {
+	public void fakeRun() {
+		while (true) {
+			run();
+		}
+	}
+
+	public void run1() {
 		System.out.println("running");
-		System.out.println(robot.state().toString()+" distance:"+distance+" angle: "+angle*180/Math.PI);
+		System.out.println(robot.state().toString() + " distance:" + distance
+				+ " angle: " + angle * 180 / Math.PI);
 		robot.update();
+		robot.localization().localize();
 		switch (robot.state()) {
+		case GoObject:
+			goObject();
+			break;
 		case LookAround:
-			
+
 			lookAround();
 			break;
 		case GoWall:
-		//	goWall();
+			// goWall();
 			break;
 		case GoBall:
 			goBall();
@@ -152,66 +175,126 @@ public class StateMachine implements Runnable {
 			System.out.println("noo such state?");
 			break;
 		}
-		
+
 		this.correctMovement(distance, angle);
 
 	}
+
+	public void run() {
+		System.out.println("running");
+		System.out.println(robot.state().toString() + " distance:" + distance
+				+ " angle: " + angle * 180 / Math.PI);
+		robot.update();
+	
+		robot.localization().localize();
+		
+		switch (robot.state()) {
+		
+		case GoObject:
+			goObject();
+			break;
+		case LookAround:
+
+			lookAround();
+			break;
+		case GoWall:
+			// goWall();
+			break;
+		case GoBall:
+			goBall();
+			break;
+		case GoSilo:
+			goSilo();
+			break;
+		case CollectSilo:
+			collectSilo();
+			break;
+		case DriveBlind:
+			driveBlind();
+			break;
+		default:
+			System.out.println("noo such state?");
+			break;
+		}
+
+		this.correctMovement(distance, angle);
+
+	}
+
+
+	public void goObject() {
+		while (robot.localization().getPosition().isClose(path.get(0))) {
+			path.remove(0);
+		}
+		if (path.isEmpty()) {
+			if (goal == Goal.Reactor) {
+				robot.setState(State.AllignReactor);
+				distance = 0;
+			}
+		} else {
+			double dist=robot.localization().getPosition().distance(path.get(0));
+			if (dist>40) distance=dist;
+			angle= robot.localization().getPosition().angle(path.get(0));
+		}
+	}
+
 
 	/**
 	 * Looks around to see anything new
 	 */
 	public void lookAround() {
-		angleToTurn -= robot.hardware().angleMoved();
-		
+		angleToTurn -= robot.odometry().angleMoved();
+
 		if (robot.camera().seesSilo() && !siloDone) {
 			robot.setState(State.GoSilo);
 			stepsAllowedToMissObject = Constants.allowedToMiss;
 		} else if (robot.camera().seesBall()) {
 			robot.setState(State.GoBall);
-			System.out.println(" angle to ball form camera "+robot.camera().biggestBall().angle());
+			System.out.println(" angle to ball form camera "
+					+ robot.camera().biggestBall().angle());
 			stepsAllowedToMissObject = Constants.allowedToMiss;
 		} else if (robot.seesWall()) {
 			robot.setState(State.FollowWall);
 		} else if (Math.abs(angleToTurn) < 0.01) {
 			robot.setState(State.GoForward);
 		}
-	
+
 		// set the required speeds
-		distance=0;
-		angle=angleToTurn;
-		
+		distance = 0;
+		angle = angleToTurn;
+
 	}
-	
+
 	/**
 	 * approaches the ball
 	 */
-	public void goBall(){
+	public void goBall() {
 		// take care of false positives and false negatives
 		if (!robot.camera().seesBall()) {
 			updateMissed();
 		} else {
-			double distanceToBall=robot.camera().biggestBall().distance();
-			System.out.println("distance to ball "+distanceToBall);
-			if (distanceToBall<Constants.minDistanceToBall){
-				this.stepsLeft=Constants.stepsForCatchingBall;
+			double distanceToBall = robot.camera().biggestBall().distance();
+			System.out.println("distance to ball " + distanceToBall);
+			if (distanceToBall < Constants.minDistanceToBall) {
+				this.stepsLeft = Constants.stepsForCatchingBall;
 				robot.setState(State.DriveBlind);
-				distance=Constants.distanceForCatchingBall;
-				angle=0;
+				distance = Constants.distanceForCatchingBall;
+				angle = 0;
 			} else {
-				distance=distanceToBall;
-				angle=robot.camera().biggestBall().angle();
+				distance = distanceToBall;
+				angle = robot.camera().biggestBall().angle();
 			}
 		}
 	}
-	
-	public void driveBlind(){
+
+	public void driveBlind() {
 		stepsLeft--;
-		distance-=robot.hardware().distanceMoved();
-		angle-=robot.hardware().angleMoved();
-		if (stepsLeft==0){
-			angleToTurn=Math.PI;
+		distance -= robot.odometry().distanceMoved();
+		angle -= robot.odometry().angleMoved();
+		if (stepsLeft == 0) {
+			angleToTurn = Math.PI;
 			robot.setState(State.LookAround);
-		} 
+		}
 	}
 
 	/**
@@ -262,7 +345,7 @@ public class StateMachine implements Runnable {
 					failedToCollectBalls = 0;
 				}
 			} else { // if didnt collect any balls this time
-				// increase the failure counter
+						// increase the failure counter
 				failedToCollectBalls++;
 
 				if (failedToCollectBalls == 3) {
@@ -274,13 +357,13 @@ public class StateMachine implements Runnable {
 	}
 
 	public void turn90() {
-		angleToTurn -= robot.hardware().angleMoved();
+		angleToTurn -= robot.odometry().angleMoved();
 		if (Math.abs(angleToTurn) < 0.01) {
 			robot.setState(State.FindYellowWall);
 		}
 		// turns the amount left
-		distance=0;
-		angle=angleToTurn;
+		distance = 0;
+		angle = angleToTurn;
 	}
 
 	public void findYellowWall() {
@@ -303,12 +386,17 @@ public class StateMachine implements Runnable {
 	}
 
 	public StateMachine(RobotSticky robot) {
-		this.robot=robot;
+		this.robot = robot;		
+		System.out.println(robot.localization().getPosition().x()+ " "+ robot.localization().getPosition().y());
+		robot.map().findReactor(robot.localization().getPosition().x(), robot.localization().getPosition().y(),1);
+		path=robot.map().getPath();
+		path.remove(0);
 	}
 
 	public static void main(String[] args) {
-		RobotSticky robot = new RobotSticky(false);
-		robot.setState(State.LookAround);
+		RobotSticky robot = new RobotSticky(false, 675, 825, Math.PI);
+		System.out.println("initialized");
+		robot.setState(State.GoObject);
 		new StateMachine(robot).start();
 	}
 

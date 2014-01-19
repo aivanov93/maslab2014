@@ -68,11 +68,11 @@ public class MapForSensors {
 	public double getProbability(double x, double y, double angle) {
 		
 		double probability=1.0;
-		
+	
 		position = Polygons2D.createOrientedRectangle(
 				new Point2D(x, y), Constants.robotLength, Constants.robotWidth,
 				angle);
-
+		updatePosition();
 		// corners
 		Point2D vLeftTop = position.vertex(2);
 		Point2D vRightTop = position.vertex(1);
@@ -102,9 +102,11 @@ public class MapForSensors {
 
 			double distanceToMazeWall = this.mazeIntersect(sources.get(i),
 					irs.get(i));
-			
-			double error=Math.abs(distanceToMazeWall-sensors.get(i))/sensors.get(i);
-			probability*=(1-error);			
+		//	System.out.println("*******sensors"+distanceToMazeWall+" "+sensors.get(i));
+			if (sensors.get(i)>0){
+				double error=Math.abs(distanceToMazeWall-sensors.get(i))/sensors.get(i);
+				probability*=(1-error);		
+			}
 		}
 		return probability;
 

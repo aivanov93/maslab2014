@@ -1,18 +1,23 @@
 package robot.map;
 
+import java.awt.Color;
+import java.awt.Graphics2D;
+import java.awt.geom.Ellipse2D;
 import java.util.Map;
 import java.util.Random;
+
+import robot.sensors.Odometry;
 
 import global.Constants;
 
 public class Localization implements Runnable {
-	private Random sampler;
+	private Random sampler=new Random();
 	private Position[] particlesOld = new Position[Constants.numberOfParticles];
 	private Position[] particlesNew = new Position[Constants.numberOfParticles];
 
 	private Position[] swap;
 
-	private double distanceMoved = 0, angleMoved = 0;
+	private Odometry odometry;
 
 	private Position position;
 	private MapForSensors map;
@@ -35,6 +40,10 @@ public class Localization implements Runnable {
 					angle + noiseAngle(), 1.0 / Constants.numberOfParticles);
 		}
 	}
+	
+	public void setOdometry(Odometry odometry){
+		this.odometry=odometry;
+	}
 
 	/**
 	 * main thing for localization
@@ -44,17 +53,32 @@ public class Localization implements Runnable {
 		swap = particlesOld;
 		particlesOld = particlesNew;
 		particlesNew = swap;
-
+		double totalWeight=0;
+		
+		//motion and sensor update
 		for (int i = 0; i < particlesOld.length; i++) {
-			particlesOld[i].motionUpdate(distanceMoved, angleMoved);
+			//motion update
+			particlesOld[i].motionUpdate(odometry);
+			//calculate the probability of this particle being the right one
 			double weight=map.getProbability(particlesOld[i].x(),
 					particlesOld[i].y(), particlesOld[i].angle());
-			
+			//assign a new weight
+			particlesOld[i].setWeight(weight);
+			//increase the total weight
+			totalWeight+=weight;			
+		}
+		position=particlesOld[0];
+		//calculate the current best position and resample particles
+		for (int i=0; i<particlesOld.length;i++){
+			//check if this particle has bigger weight
+			if (particlesOld[i].weight()>position.weight()){
+				position=particlesOld[i];
+			}			
+			//draw a new particle
+			double random=sampler.nextDouble()*totalWeight;			
+			particlesNew[i]=drawParticle(random);
 		}
 		
-		for (int i=0; i<particlesOld.length;i++){
-			
-		}
 	}
 
 	/**
@@ -66,12 +90,11 @@ public class Localization implements Runnable {
 	 */
 	private Position drawParticle(double random) {
 		int lowIndex = 0;
-		int highIndex = Constants.numberOfParticles;
-
+		int highIndex = Constants.numberOfParticles-1;
 		while (lowIndex <= highIndex) {
 
 			int midNum = (lowIndex + highIndex) / 2;
-
+			
 			double rangeLower = midNum - 1 < 0 ? 0 : particlesOld[midNum - 1]
 					.weight();
 			double rangeUpper = particlesOld[midNum].weight();
@@ -81,14 +104,36 @@ public class Localization implements Runnable {
 			} else if (random >= rangeUpper) {
 				lowIndex = midNum + 1;
 			} else if (random >= rangeLower && random < rangeUpper) {
-				return particlesOld[midNum];
+				return particlesOld[midNum].clone();
 			}
 		}
-		return particlesOld[0];
+		return particlesOld[0].clone();
 	}
 
+	public Position getPosition(){
+		return position;
+	}
+	
+	/**
+	 * used for thread runnable
+	 */
 	public void run() {
-
+		localize();
+	}
+	
+	
+	
+	public void draw(Graphics2D g) {
+		double r=3;
+		for (int i = 0; i < particlesOld.length; i++) {			
+			g.setColor(Color.blue);
+			if (particlesNew[i]!=null){
+			g.fill(new Ellipse2D.Double(particlesNew[i].x() -r, particlesNew[i].y()-r, 2*r, 2*r));	
+			}
+		}
+		g.setColor(Color.orange);
+		r=6;
+		g.fill(new Ellipse2D.Double(position.x() -r, position.y()-r, 2*r, 2*r));
 	}
 
 }

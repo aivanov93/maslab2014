@@ -10,34 +10,47 @@ import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.geom.Ellipse2D;
 import java.awt.geom.Line2D;
+import java.nio.Buffer;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import javax.swing.JComponent;
 import javax.swing.JFrame;
 
+import math.geom2d.Point2D;
 import math.geom2d.line.LineSegment2D;
 
 import straightedge.geom.KPoint;
 import straightedge.geom.KPolygon;
+import straightedge.geom.PolygonBufferer;
 import straightedge.geom.path.NodeConnector;
 import straightedge.geom.path.PathBlockingObstacleImpl;
 import straightedge.geom.path.PathData;
 import straightedge.geom.path.PathFinder;
+import straightedge.test.experimental.Drawer;
 
 /**
- * Map representation for the maze
- * 
+ * Map representation for the maze 
  */
 public class MazeMap {
 	JFrame frame;
 	ArrayList<KPolygon> walls = new ArrayList<KPolygon>();
 	ArrayList<PathBlockingObstacleImpl> obstacles = new ArrayList<PathBlockingObstacleImpl>();
+	ArrayList<KPoint> reactors=new ArrayList<KPoint>();
+	ArrayList<KPoint> safeReactors=new ArrayList<KPoint>();
+	ArrayList<KPoint> yellowWalls=new ArrayList<KPoint>();
+	ArrayList<KPoint> safeYellowWalls=new ArrayList<KPoint>();
+	KPoint silo;
+	KPoint safeSilo;
+	Set<KPoint> visitedReactorSet=new HashSet<KPoint>();
 	PathFinder pathFinder;
-	NodeConnector nodeConnector;
-	PathData pathData;
+	NodeConnector<PathBlockingObstacleImpl> nodeConnector;
+	PathData pathData=new PathData();
+	PolygonBufferer bufferer=new PolygonBufferer();
 
-	public MazeMap(List<LineSegment2D> walls) {
+	public MazeMap(List<LineSegment2D> walls, List<LineSegment2D> reactors, List<LineSegment2D> yellowWalls, LineSegment2D silo) {
 		for (LineSegment2D wall: walls) {
 			// get the wall coordinates
 			double x0 = wall.firstPoint().x();
@@ -48,7 +61,6 @@ public class MazeMap {
 			// make a rectangle out of them
 			double l = 0.5;
 			double angle = Math.atan2(y1 - y0, x1 - x0);
-			System.out.println(angle);
 			double yn1, yn2, xn1, xn2;
 
 			xn1 = x0 - l * Math.sin(angle);
@@ -65,20 +77,39 @@ public class MazeMap {
 
 			// make an obstacle out of the rectangle
 			PathBlockingObstacleImpl.BUFFER_AMOUNT = (float) Constants.safeDistanceToWall;
-			PathBlockingObstacleImpl.NUM_POINTS_IN_A_QUADRANT = 3;
+			PathBlockingObstacleImpl.NUM_POINTS_IN_A_QUADRANT = 0;
+			KPolygon buffered=bufferer.buffer(new KPolygon(points), (float) Constants.safeDistanceToWall, 0);
+			PathBlockingObstacleImpl.BUFFER_AMOUNT=3;//(float) 50;
 			obstacles.add(PathBlockingObstacleImpl
-					.createObstacleFromInnerPolygon(new KPolygon(points)));
+					.createObstacleFromInnerPolygon(buffered));
+			
 
 		}
-
-		nodeConnector = new NodeConnector();
+		
+		for (LineSegment2D reactor: reactors) {
+			Point2D center=Point2D.midPoint(reactor.firstPoint(), reactor.lastPoint());
+			this.reactors.add(new KPoint(center.x(), center.y()));
+			this.safeReactors.add(getNearestPointOutsideOfObstacles(new KPoint(center.x(), center.y())));
+		}
+		
+		for (LineSegment2D wall: yellowWalls) {
+			Point2D center=Point2D.midPoint(wall.firstPoint(), wall.lastPoint());
+			this.yellowWalls.add(new KPoint(center.x(), center.y()));
+			this.safeYellowWalls.add(getNearestPointOutsideOfObstacles(new KPoint(center.x(), center.y())));
+		}
+		Point2D center=Point2D.midPoint(silo.firstPoint(), silo.lastPoint());
+		this.silo=new KPoint(center.x(), center.y());
+		safeSilo=getNearestPointOutsideOfObstacles(new KPoint(center.x(), center.y()));
+		
+	
+		nodeConnector = new NodeConnector<PathBlockingObstacleImpl>();
 		for (int k = 0; k < obstacles.size(); k++) {
 			nodeConnector.addObstacle(obstacles.get(k), obstacles, 1000f);
 		}
 
 		// Initialize the PathFinder
 		pathFinder = new PathFinder();
-
+		
 		// draw the map
 		final JComponent renderComponent = new JComponent() {
 
@@ -104,15 +135,14 @@ public class MazeMap {
 
 				for (int i = 0; i < obstacles.size(); i++) {
 					g.setColor(Color.red);
-					g.fill(obstacles.get(i).getInnerPolygon());
-					System.out.println(obstacles.get(i).getInnerPolygon());
+					g.fill(obstacles.get(i).getOuterPolygon());					
 				}
 				
 				g.setColor(Color.blue);
 				
 				ArrayList<KPoint> pathPoints = pathData.points;
 				if (pathPoints.size() > 0) {
-					KPoint currentPoint = new KPoint(200,400);
+					KPoint currentPoint = new KPoint(675,825);
 					for (int j = 0; j < pathPoints.size(); j++) {
 						KPoint nextPoint = pathPoints.get(j);
 						g.draw(new Line2D.Double(currentPoint.getX(), currentPoint.getY(), nextPoint.getX(), nextPoint.getY()));
@@ -125,8 +155,8 @@ public class MazeMap {
 			}
 		};
 		frame = new JFrame();
-		frame.setPreferredSize(new Dimension(800, 800));
-		frame.setSize(800, 800);
+		frame.setPreferredSize(new Dimension(1200, 1080));
+		frame.setSize(1200, 1080);
 		frame.add(renderComponent);
 		renderComponent.repaint();
 		frame.setVisible(true);
@@ -141,7 +171,7 @@ public class MazeMap {
 		walls.add(new LineSegment2D(600, 0, 600, 500));
 		walls.add(new LineSegment2D(600, 500, 400, 200));
 		walls.add(new LineSegment2D(400, 200, 200, 500));		
-		MazeMap n=new MazeMap(walls);
+		MazeMap n=new MazeMap(walls,new ArrayList<LineSegment2D>(),new ArrayList<LineSegment2D>(), new LineSegment2D(0,0,0,0));
 		n.findPath(200, 400, 500, 300);
 	}
 
@@ -153,17 +183,66 @@ public class MazeMap {
 	 * @param y
 	 * @param finx
 	 * @param finy
-	 * @return
 	 */
-	public ArrayList<KPoint> findPath(double x, double y, double finx,
+	public void findPath(double x, double y, double finx,
 			double finy) {
 		KPoint pos = getNearestPointOutsideOfObstacles(new KPoint(x, y));
 		KPoint target = getNearestPointOutsideOfObstacles(new KPoint(finx, finy));
-
+		System.out.println(target);
 		pathData = pathFinder.calc(pos, target, 1000, nodeConnector,
-				obstacles);
-		ArrayList<KPoint> pathPoints = pathData.points;
-		return pathPoints;
+				obstacles);		
+		
+	}
+	
+	/**
+	 * finds the closest reactor to this point
+	 * @param x
+	 * @param y
+	 */
+	public void findClosestReactor(double x, double y){
+		KPoint pos = getNearestPointOutsideOfObstacles(new KPoint(x, y));
+		pathData = pathFinder.calc(pos, safeReactors.get(0), 1000, nodeConnector,
+				obstacles);	
+		double minLength=length(pathData.points);
+		for (int i=1; i<3;i++){
+			PathData temp=pathFinder.calc(pos, safeReactors.get(i), 1000, nodeConnector,
+					obstacles);
+			double length=length(temp.points);
+			if (length<minLength){
+				pathData=temp;
+				minLength=length;
+			}
+			
+		}
+		System.out.println("path in map"+pathData.points);
+	}
+	
+
+	/**
+	 * finds the closest reactor to this point
+	 * @param x
+	 * @param y
+	 */
+	public void findReactor(double x, double y, int i){
+		KPoint pos = getNearestPointOutsideOfObstacles(new KPoint(x, y));
+		pathData = pathFinder.calc(pos, safeReactors.get(i), 500, nodeConnector,
+				obstacles);	
+		System.out.println("path in map"+pathData.points);
+	}
+	
+	public double length(ArrayList<KPoint> path){
+		double distance=0;
+		KPoint currentPoint=path.get(0);
+		for (int i=1; i<path.size(); i++){
+			KPoint nextPoint=path.get(i);
+			distance+=currentPoint.distance(nextPoint);
+			nextPoint=currentPoint;
+		}
+		return distance;
+	}
+	
+	public ArrayList<KPoint> getPath(){
+		return new ArrayList<KPoint>(pathData.points);
 	}
 	
 	//public double findProbability
@@ -193,6 +272,22 @@ public class MazeMap {
 			}
 		}
 		return movedPoint;
+	}
+	
+	public void draw(Graphics2D g2){
+		ArrayList<KPoint> pathPoints = pathData.points;
+		g2.setColor(Color.gray);
+		g2.setStroke(new BasicStroke(2));
+		if (pathPoints.size() > 0) {
+			KPoint currentPoint = new KPoint(675,825);
+			for (int j = 0; j < pathPoints.size(); j++) {
+				KPoint nextPoint = pathPoints.get(j);
+				g2.draw(new Line2D.Double(currentPoint.getX(), currentPoint.getY(), nextPoint.getX(), nextPoint.getY()));
+				float d = 5f;
+				g2.fill(new Ellipse2D.Double(nextPoint.getX() - d / 2f, nextPoint.getY() - d / 2f, d, d));
+				currentPoint = nextPoint;
+			}
+		}
 	}
 
 }

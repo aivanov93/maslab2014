@@ -1,7 +1,19 @@
 package robot.map;
 
+import global.Constants;
+
+import java.util.Random;
+
+import math.geom2d.Angle2D;
+import math.geom2d.Point2D;
+import math.geom2d.line.Ray2D;
+
+import robot.sensors.Odometry;
+import straightedge.geom.KPoint;
+
 public class Position {
 
+	private Random sampler=new Random();
 	private double weight;
 	private double x;
 	private double y;
@@ -30,11 +42,39 @@ public class Position {
 		return weight;
 	}
 	
-	public void motionUpdate(double distance, double angle){
-		
+	public void motionUpdate(Odometry odometry){
+		//System.out.println("****before*******"+x+" "+y+" "+angle);
+		x=x+odometry.xMoved()+sampler.nextGaussian()*odometry.xMoved()*0.2;
+		y=y+odometry.yMoved()+sampler.nextGaussian()*odometry.yMoved()*0.2;
+
+		angle=angle+odometry.angleMoved()+sampler.nextGaussian()*odometry.angleMoved()*0.2;
+
+		//System.out.println("****after*****"+x+" "+y+" "+angle);
 	}
 	
 	public void setWeight(double weight){
 		this.weight=weight;
+	}
+	
+	public boolean isClose(KPoint point){
+		double x1=point.x, y1=point.y;
+		return Math.sqrt((x1-x)*(x1-x)+(y1-y)*(y1-y))<Constants.closeEnough;
+	}
+	
+	public double distance(KPoint point){
+		double x1=point.x, y1=point.y;
+		return Math.sqrt((x1-x)*(x1-x)+(y1-y)*(y1-y));
+	}
+	
+	public double angle(KPoint point){
+		Point2D source=new Point2D(x, y);
+		Ray2D ray=new Ray2D(source, new Point2D(point.x, point.y));
+		Ray2D ray2d=new Ray2D(x,y,angle);
+		double angle1=Angle2D.angle(ray2d, ray);
+		return Constants.formatAngle(angle1);
+	}
+	
+	public Position clone(){
+		return new Position(x, y, angle, weight);
 	}
 }
