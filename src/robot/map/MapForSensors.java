@@ -5,7 +5,7 @@ import global.Constants;
 import java.util.ArrayList;
 import java.util.List;
 
-import robot.sensors.IRSensors;
+import robot.sensors.RangeSensors;
 
 import math.geom2d.Point2D;
 import math.geom2d.line.LineSegment2D;
@@ -13,21 +13,29 @@ import math.geom2d.line.Ray2D;
 import math.geom2d.polygon.Polygons2D;
 import math.geom2d.polygon.SimplePolygon2D;
 
+/**
+ * Represents a map of the world and is used for calculating the real readings
+ * from a certain position
+ * 
+ */
 public class MapForSensors {
-	IRSensors sensors;
+	RangeSensors sensors;
 
 	private List<LineSegment2D> walls;
-	
+
 	SimplePolygon2D position;
 	Point2D head, center;
 	Ray2D direction;
 	double robotAngle;
 
-	public MapForSensors(List<LineSegment2D> walls, IRSensors sensors) {
+	public MapForSensors(List<LineSegment2D> walls, RangeSensors sensors) {
 		this.walls = walls;
 		this.sensors = sensors;
 	}
 
+	/**
+	 * Calculates the main parts of the robot based on position
+	 */
 	public void updatePosition() {
 
 		// the head of the robot
@@ -65,21 +73,30 @@ public class MapForSensors {
 		return source.distance(closestPoint);
 	}
 
-	public double getProbability(double x, double y, double angle) {
-		
-		double probability=1.0;
+	/**
+	 * Calculates the probability of the robot being at this position
+	 * Uses the current sonars readings and the real readings based on position
+	 * 
+	 * @param x current x
+	 * @param y current y
+	 * @param angle current angle
+	 * @return the probability of being in this position
+	 */
 	
-		position = Polygons2D.createOrientedRectangle(
-				new Point2D(x, y), Constants.robotLength, Constants.robotWidth,
-				angle);
+	public double getProbability(double x, double y, double angle) {
+
+		double probability = 1.0;
+
+		position = Polygons2D.createOrientedRectangle(new Point2D(x, y),
+				Constants.robotLength, Constants.robotWidth, angle);
 		updatePosition();
 		// corners
 		Point2D vLeftTop = position.vertex(2);
 		Point2D vRightTop = position.vertex(1);
 		Point2D vRightBottom = position.vertex(0);
 		Point2D vLeftBottom = position.vertex(3);
-		Point2D vRightMiddle=Point2D.midPoint(vRightTop, vRightBottom);
-		Point2D vLeftMiddle=Point2D.midPoint(vLeftBottom, vLeftTop);
+		Point2D vRightMiddle = Point2D.midPoint(vRightTop, vRightBottom);
+		Point2D vLeftMiddle = Point2D.midPoint(vLeftBottom, vLeftTop);
 
 		// create rays for each of the sensors
 		List<Ray2D> irs = new ArrayList<Ray2D>();
@@ -102,10 +119,11 @@ public class MapForSensors {
 
 			double distanceToMazeWall = this.mazeIntersect(sources.get(i),
 					irs.get(i));
-		//	System.out.println("*******sensors"+distanceToMazeWall+" "+sensors.get(i));
-			if (sensors.get(i)>0){
-				double error=Math.abs(distanceToMazeWall-sensors.get(i))/sensors.get(i);
-				probability*=(1-error);		
+			// System.out.println("*******sensors"+distanceToMazeWall+" "+sensors.get(i));
+			if (sensors.get(i) > 0) {
+				double error = Math.abs(distanceToMazeWall - sensors.get(i))
+						/ sensors.get(i);
+				probability *= (1 - error);
 			}
 		}
 		return probability;

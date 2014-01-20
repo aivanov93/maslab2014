@@ -10,6 +10,8 @@ public class Constants {
 	public static double robotWidth=68;
 	public static double robotLength=68;
 
+	public static double wheelBase=30;
+	public static double wheelRadius=10;
 	
 	/**
 	 * sensor related constants

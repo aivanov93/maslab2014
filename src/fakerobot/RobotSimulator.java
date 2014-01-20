@@ -16,7 +16,7 @@ import javax.swing.JFrame;
 import javax.swing.JPanel;
 
 import robot.map.Position;
-import robot.sensors.IRSensors;
+import robot.sensors.RangeSensors;
 import robot.sensors.Odometry;
 import robot.sensors.RobotEnviroment;
 import game.StateMachine.State;
@@ -39,9 +39,13 @@ import math.geom2d.Point2D;
 import math.geom2d.Vector2D;
 
 /**
- * Represents the playing map
+ * Imitates the playing enviroment. Allows odometry readings, vision imitation,
+ * sensor readings and robot movements. 
  */
 public class RobotSimulator implements RobotEnviroment {
+	/**
+	 * Maze objects
+	 */
 	private List<LineSegment2D> maze;
 	private List<Circle2D> redBalls = new ArrayList<Circle2D>();
 	private List<Circle2D> greenBalls = new ArrayList<Circle2D>();
@@ -49,28 +53,32 @@ public class RobotSimulator implements RobotEnviroment {
 	private List<LineSegment2D> yellowWalls = new ArrayList<LineSegment2D>();
 	private LineSegment2D silo;
 
+	/**
+	 * Represents the current position of the robot
+	 */
 	private SimplePolygon2D position = Polygons2D.createOrientedRectangle(
 			new Point2D(5, 5), 7, 5, 0);
 
-	private List<Double> irs = Arrays.asList(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
-			0.0);
-
-	// information to get from the robot
+	
+	/**
+	 *  Odometry readings
+	 */
 	private double xMoved = 0;
 	private double yMoved = 0;
 	private double angleMoved = 0;
 
+	/**
+	 * Balls related counters
+	 */
 	private int ballsCollected = 0;
 	private int redBallsCollected = 0;
 	private int greenBallsCollected = 0;
 
+	/**
+	 * Imitates the angle of view of the camera
+	 */
 	private double angleOfView = 50 * Math.PI / 180;
-	private double clock = 0.1;// in seconds
-
-	private double noiseForward = 0.1;
-	private double noiseAngle = 0.03;
-	private double noiseIR = 0.1;
-
+	
 	private double maxSpeed = 8 * Constants.clock / 100f;
 	private double maxAngularSpeed = Math.PI / 2 / 10 * Constants.clock / 100f;
 
@@ -78,8 +86,7 @@ public class RobotSimulator implements RobotEnviroment {
 
 	private double length, width;
 
-	private int score = 0;
-
+	
 	private HashMap<LineSegment2D, SimpleEntry<Integer, Integer>> reactorBalls = new HashMap<LineSegment2D, SimpleEntry<Integer, Integer>>();
 
 	// useful things
@@ -163,15 +170,10 @@ public class RobotSimulator implements RobotEnviroment {
 		this.width = width;
 	}
 
-	public double noisedIR(double value) {
-		return value + noiseGenerator.nextGaussian() * value * 0.1;
-	}
+	public void update() {
+	};
 
-	public double noisedForward(double value) {
-		return value + noiseGenerator.nextGaussian() * value * 0.1;
-	}
-
-	public double noisedAngle(double value) {
+	public double noised(double value) {
 		return value + noiseGenerator.nextGaussian() * value * 0.1;
 	}
 
@@ -229,13 +231,13 @@ public class RobotSimulator implements RobotEnviroment {
 			w = 0.00000001;
 
 		// hardcore math model for movement
-		yMoved = noisedForward(v / w
+		yMoved = noised(v / w
 				* (Math.cos(robotAngle) - Math.cos(robotAngle + w)));
-		xMoved = noisedForward(v / w
+		xMoved = noised(v / w
 				* (Math.sin(robotAngle + w) - Math.sin(robotAngle)));
 
 		// calculate the required translation and translation
-		angleMoved = noisedAngle(w);
+		angleMoved = noised(w);
 
 		System.out.println("really moved " + xMoved + " " + yMoved + " "
 				+ angleMoved);
@@ -245,9 +247,9 @@ public class RobotSimulator implements RobotEnviroment {
 				+ angleMoved);
 
 		// update odometry
-		yMoved = noisedForward(yMoved);
-		xMoved = noisedForward(xMoved);
-		angleMoved = noisedAngle(angleMoved);
+		yMoved = noised(yMoved);
+		xMoved = noised(xMoved);
+		angleMoved = noised(angleMoved);
 
 		System.out.println("odometry " + xMoved + " " + yMoved + " "
 				+ angleMoved);
@@ -349,7 +351,7 @@ public class RobotSimulator implements RobotEnviroment {
 				bonus1 = 10;
 			if (bottom > 0)
 				bonus2 = 10;
-			score += top * 7 + bottom * 3 + bonus1 + bonus2;
+			//score += top * 7 + bottom * 3 + bonus1 + bonus2;
 			// mygui.setScore(score);
 		}
 	}
@@ -463,10 +465,10 @@ public class RobotSimulator implements RobotEnviroment {
 	}
 
 	/**
-	 * update IR readings
+	 * update Range sensor readings readings
 	 */
 
-	public void updateReadings(IRSensors irSensors) {
+	public void updateReadings(RangeSensors irSensors) {
 		updatePosition();
 
 		// corners
@@ -503,7 +505,7 @@ public class RobotSimulator implements RobotEnviroment {
 				distanceToMazeWall = -1.0;
 			}
 
-			irSensors.set(i, noisedIR(distanceToMazeWall));
+			irSensors.set(i, noised(distanceToMazeWall));
 		}
 
 	}

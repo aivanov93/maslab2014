@@ -15,7 +15,7 @@ public interface RobotEnviroment {
 	 * update the IR readings
 	 * @param irs
 	 */
-	public void updateReadings(IRSensors irs);
+	public void updateReadings(RangeSensors irs);
 	
 	/**
 	 * updates the camera state.. should probably use image processor from vision
@@ -52,6 +52,7 @@ public interface RobotEnviroment {
 	
 	public void dumpGreenBallsBottom(int n);
 	
+	public void update();
 	/**
 	 * odometry
 	 * @return

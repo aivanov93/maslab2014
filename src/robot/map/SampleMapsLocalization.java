@@ -3,12 +3,12 @@ package robot.map;
 import java.util.ArrayList;
 import java.util.List;
 
-import robot.sensors.IRSensors;
+import robot.sensors.RangeSensors;
 
 import math.geom2d.line.LineSegment2D;
 
 public class SampleMapsLocalization {
-	public static MapForSensors mapForSensors1(IRSensors irs){
+	public static MapForSensors mapForSensors1(RangeSensors irs){
 		List<LineSegment2D> walls=new ArrayList<LineSegment2D>();
 		walls.add(new LineSegment2D(200, 500, 100, 400));
 		walls.add(new LineSegment2D(100, 400, 200, 300));
@@ -20,7 +20,7 @@ public class SampleMapsLocalization {
 		return new MapForSensors(walls, irs);
 	}
 	
-	public static MapForSensors mapForSensors2(IRSensors irs){
+	public static MapForSensors mapForSensors2(RangeSensors irs){
 		List<LineSegment2D> walls=BotClientMap.getDefaultMap().getMaze();		
 		return new MapForSensors(walls, irs);
 	}

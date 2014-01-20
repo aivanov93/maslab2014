@@ -20,6 +20,11 @@ import robot.map.MapForSensors;
 import robot.map.MazeMap;
 import robot.sensors.RobotEnviroment;
 
+/**
+ * Used to show the current state of Enviroment of the robot
+ * 
+ * Shows the walls, the maze objects, the balls, the current position of the robot and its predicted position
+ */
 public class MapGUI extends JFrame {
 
 	Panel panel;

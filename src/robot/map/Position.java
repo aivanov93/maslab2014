@@ -43,13 +43,9 @@ public class Position {
 	}
 	
 	public void motionUpdate(Odometry odometry){
-		//System.out.println("****before*******"+x+" "+y+" "+angle);
 		x=x+odometry.xMoved()+sampler.nextGaussian()*odometry.xMoved()*0.2;
 		y=y+odometry.yMoved()+sampler.nextGaussian()*odometry.yMoved()*0.2;
-
 		angle=angle+odometry.angleMoved()+sampler.nextGaussian()*odometry.angleMoved()*0.2;
-
-		//System.out.println("****after*****"+x+" "+y+" "+angle);
 	}
 	
 	public void setWeight(double weight){
@@ -72,6 +68,14 @@ public class Position {
 		Ray2D ray2d=new Ray2D(x,y,angle);
 		double angle1=Angle2D.angle(ray2d, ray);
 		return Constants.formatAngle(angle1);
+	}
+	
+	public Point2D toPoint2D(){
+		return new Point2D(x, y);
+	}
+	
+	public Ray2D toRay2D(){
+		return new Ray2D(x, y, angle);
 	}
 	
 	public Position clone(){

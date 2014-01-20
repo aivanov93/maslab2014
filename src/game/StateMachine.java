@@ -10,13 +10,26 @@ import java.util.concurrent.TimeUnit;
 
 import javax.management.timer.Timer;
 
+import math.geom2d.Angle2D;
+import math.geom2d.Point2D;
+import math.geom2d.line.Ray2D;
+
 import robot.main.RobotSticky;
 import straightedge.geom.KPoint;
 import vision.detector.ColorObject;
 
+/**
+ * Represents the State Machine of the robot. Uses an instance of Robot and
+ * performs the according movements based on current state of the world, e.g.
+ * the number of reactors that were score, current time, etc.
+ * 
+ * The run() imitates one step and the State Machine is scheduled to work at fixed clock rate
+ * 
+ * 
+ */
 public class StateMachine implements Runnable {
 	public static enum State {
-		Start, LookAround, GoBall, GoWall, GoForward, GoReactor, GoSilo, LookAway, DriveBlind, StickyState, ReactorDeposit, FollowWall, AlignSilo, Turn90, FindYellowWall, CollectSilo, AllignReactor, GoObject,
+		Start, LookAround, GoBall, GoForward, GoReactor, GoSilo, LookAway, DriveBlind, StickyState, ReactorDeposit, FollowWall, AlignSilo, Turn90, FindYellowWall, CollectSilo, AllignReactor, GoObject, Stop, DriveStraight,
 	}
 
 	public static enum Goal {
@@ -37,11 +50,6 @@ public class StateMachine implements Runnable {
 	private int[] scoredTop = new int[3];
 
 	/**
-	 * signals whether robot know the position of the yellowWall
-	 */
-	private boolean knowsYellow = false;
-
-	/**
 	 * signals whether balls where collected from silo
 	 */
 	private boolean siloDone = false;
@@ -59,7 +67,7 @@ public class StateMachine implements Runnable {
 	/**
 	 * at each step tells whether a path finding algorithm should be run or not
 	 */
-	private boolean shouldSearch=false;
+	private boolean shouldSearch = false;
 	/**
 	 * steps timer used for different task
 	 */
@@ -125,7 +133,8 @@ public class StateMachine implements Runnable {
 	}
 
 	public void correctMovement(double distance, double angle) {
-		if (Math.abs(angle)>Math.PI/8) distance=0;
+		if (Math.abs(angle) > Math.PI / 8)
+			distance = 0;
 		robot.move(distance, angle);
 		// TODO implement wall correction
 	}
@@ -156,9 +165,7 @@ public class StateMachine implements Runnable {
 
 			lookAround();
 			break;
-		case GoWall:
-			// goWall();
-			break;
+
 		case GoBall:
 			goBall();
 			break;
@@ -185,20 +192,18 @@ public class StateMachine implements Runnable {
 		System.out.println(robot.state().toString() + " distance:" + distance
 				+ " angle: " + angle * 180 / Math.PI);
 		robot.update();
-	
+
 		robot.localization().localize();
-		
+
 		switch (robot.state()) {
-		
+
+		case DriveStraight:
+
 		case GoObject:
 			goObject();
 			break;
 		case LookAround:
-
 			lookAround();
-			break;
-		case GoWall:
-			// goWall();
 			break;
 		case GoBall:
 			goBall();
@@ -221,7 +226,6 @@ public class StateMachine implements Runnable {
 
 	}
 
-
 	public void goObject() {
 		while (robot.localization().getPosition().isClose(path.get(0))) {
 			path.remove(0);
@@ -232,12 +236,13 @@ public class StateMachine implements Runnable {
 				distance = 0;
 			}
 		} else {
-			double dist=robot.localization().getPosition().distance(path.get(0));
-			if (dist>40) distance=dist;
-			angle= robot.localization().getPosition().angle(path.get(0));
+			double dist = robot.localization().getPosition()
+					.distance(path.get(0));
+			if (dist > 40)
+				distance = dist;
+			angle = robot.localization().getPosition().angle(path.get(0));
 		}
 	}
-
 
 	/**
 	 * Looks around to see anything new
@@ -297,6 +302,15 @@ public class StateMachine implements Runnable {
 		}
 	}
 
+	public void driveStraight() {
+		distance -= robot.odometry().distanceMoved();
+		angle -= robot.odometry().angleMoved();
+		if (distance < 0.03) {
+			robot.setState(State.Stop);
+			robot.hardware().move(0, 0);
+		}
+	}
+
 	/**
 	 * Approaches the silo
 	 */
@@ -321,6 +335,26 @@ public class StateMachine implements Runnable {
 			robot.move(distanceToSilo, angleToSilo);
 		}
 
+	}
+
+	/**
+	 * after we arrive at the object we have to turn towards it
+	 */
+	public void faceObject() {
+		Ray2D objectDirection = new Ray2D(robot.localization().getPosition()
+				.toPoint2D(), robot.map().currentObject());
+		Ray2D robotDirection = robot.localization().getPosition().toRay2D();
+		angle = Angle2D.angle(robotDirection, objectDirection);
+		if (angleToTurn < Math.PI / 60) {
+			switch (goal) {
+			case Silo:
+				robot.setState(State.AlignSilo);
+				break;
+			case Reactor:
+				robot.setState(State.AllignReactor);
+				break;
+			}
+		}
 	}
 
 	public void allignSilo() {
@@ -356,28 +390,6 @@ public class StateMachine implements Runnable {
 		}
 	}
 
-	public void turn90() {
-		angleToTurn -= robot.odometry().angleMoved();
-		if (Math.abs(angleToTurn) < 0.01) {
-			robot.setState(State.FindYellowWall);
-		}
-		// turns the amount left
-		distance = 0;
-		angle = angleToTurn;
-	}
-
-	public void findYellowWall() {
-		robot.setState(State.FollowWall);
-		/*
-		 * if (robot.camera().seesYellowWall() &&
-		 * robot.hardware().redBallsInside()>0){
-		 * robot.hardware().dumpRedBalls(robot.hardware().redBallsInside()); }
-		 * else {
-		 * 
-		 * }
-		 */
-	}
-
 	public void followWall() {
 		if (robot.camera().seesBall()) {
 			ColorObject ball = robot.camera().biggestBall();
@@ -386,10 +398,12 @@ public class StateMachine implements Runnable {
 	}
 
 	public StateMachine(RobotSticky robot) {
-		this.robot = robot;		
-		System.out.println(robot.localization().getPosition().x()+ " "+ robot.localization().getPosition().y());
-		robot.map().findReactor(robot.localization().getPosition().x(), robot.localization().getPosition().y(),1);
-		path=robot.map().getPath();
+		this.robot = robot;
+		System.out.println(robot.localization().getPosition().x() + " "
+				+ robot.localization().getPosition().y());
+		robot.map().findReactor(robot.localization().getPosition().x(),
+				robot.localization().getPosition().y(), 1);
+		path = robot.map().getPath();
 		path.remove(0);
 	}
 

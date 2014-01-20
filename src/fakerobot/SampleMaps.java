@@ -8,6 +8,10 @@ import robot.map.Position;
 
 import math.geom2d.line.LineSegment2D;
 
+/**
+ * Sample maps used for the testing
+ *
+ */
 public class SampleMaps {
 	public static RobotSimulator createMap1(){
 		List<LineSegment2D> walls=new ArrayList<LineSegment2D>();

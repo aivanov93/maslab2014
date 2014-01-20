@@ -12,7 +12,7 @@ import robot.map.MapForSensors;
 import robot.map.MazeMap;
 import robot.map.SampleMapsLocalization;
 import robot.moves.Driver;
-import robot.sensors.IRSensors;
+import robot.sensors.RangeSensors;
 import robot.sensors.Odometry;
 import robot.sensors.RobotEnviroment;
 import robot.sensors.RobotHardware;
@@ -54,7 +54,7 @@ public class RobotSticky implements Robot {
 	
 	private MapGUI gui;
 	
-	private IRSensors irs = new IRSensors(Constants.numberOfIRs);
+	private RangeSensors irs = new RangeSensors(Constants.numberOfIRs);
 
 	
 
@@ -95,7 +95,7 @@ public class RobotSticky implements Robot {
 		return hardware;
 	}
 	
-	public IRSensors irs(){
+	public RangeSensors irs(){
 		return irs;
 	}
 	
