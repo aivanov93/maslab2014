@@ -8,6 +8,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
+
 import javax.management.timer.Timer;
 
 import math.geom2d.Angle2D;
@@ -29,7 +30,7 @@ import vision.detector.ColorObject;
  */
 public class StateMachine implements Runnable {
 	public static enum State {
-		Start, LookAround, GoBall, GoForward, GoReactor, GoSilo, LookAway, DriveBlind, StickyState, ReactorDeposit, FollowWall, AlignSilo, Turn90, FindYellowWall, CollectSilo, AllignReactor, GoObject, Stop, DriveStraight,
+		Start, LookAround, GoBall, GoForward, GoReactor, GoSilo, LookAway, DriveBlind, StickyState, ReactorDeposit, FollowWall, AlignSilo, Turn90, FindYellowWall, CollectSilo, AllignReactor, GoObject, Stop, DriveStraight, FaceObject,
 	}
 
 	public static enum Goal {
@@ -132,11 +133,18 @@ public class StateMachine implements Runnable {
 		robot.move(distance, angle);
 	}
 
-	public void correctMovement(double distance, double angle) {
+	public void correctMovement() {
+	
 		if (Math.abs(angle) > Math.PI / 8)
 			distance = 0;
-		robot.move(distance, angle);
+		
 		// TODO implement wall correction
+	}
+	
+	public void correctForWalls(){
+		for (int i=0; i<Constants.numberOfIRs;i++){
+			//if (robot.irs().get(i)<3)
+		}
 	}
 
 	/* *************************************************
@@ -152,11 +160,13 @@ public class StateMachine implements Runnable {
 	}
 
 	public void run1() {
-		System.out.println("running");
 		System.out.println(robot.state().toString() + " distance:" + distance
 				+ " angle: " + angle * 180 / Math.PI);
 		robot.update();
+		vision.Timer timer=new vision.Timer(); timer.start();
 		robot.localization().localize();
+		timer.print("localization ");
+		
 		switch (robot.state()) {
 		case GoObject:
 			goObject();
@@ -183,24 +193,30 @@ public class StateMachine implements Runnable {
 			break;
 		}
 
-		this.correctMovement(distance, angle);
+		this.correctMovement();
 
 	}
 
 	public void run() {
-		System.out.println("running");
 		System.out.println(robot.state().toString() + " distance:" + distance
 				+ " angle: " + angle * 180 / Math.PI);
+		//update sensors
 		robot.update();
-
+		//move the robot
+		robot.move(distance, angle);
+		
+		//start the state machine
+		vision.Timer timer=new vision.Timer(); timer.start();
 		robot.localization().localize();
-
+		timer.print("localization ");
 		switch (robot.state()) {
-
 		case DriveStraight:
-
+			break;
 		case GoObject:
 			goObject();
+			break;
+		case FaceObject:
+			faceObject();
 			break;
 		case LookAround:
 			lookAround();
@@ -222,24 +238,24 @@ public class StateMachine implements Runnable {
 			break;
 		}
 
-		this.correctMovement(distance, angle);
+		this.correctMovement();
 
 	}
+	
 
 	public void goObject() {
+		System.out.println("in goObject");
 		while (robot.localization().getPosition().isClose(path.get(0))) {
 			path.remove(0);
+			if (path.size()==0) break;
 		}
 		if (path.isEmpty()) {
-			if (goal == Goal.Reactor) {
-				robot.setState(State.AllignReactor);
-				distance = 0;
-			}
+			robot.setState(State.FaceObject);
+			distance=0;
 		} else {
 			double dist = robot.localization().getPosition()
 					.distance(path.get(0));
-			if (dist > 40)
-				distance = dist;
+			distance = dist;
 			angle = robot.localization().getPosition().angle(path.get(0));
 		}
 	}
@@ -345,7 +361,8 @@ public class StateMachine implements Runnable {
 				.toPoint2D(), robot.map().currentObject());
 		Ray2D robotDirection = robot.localization().getPosition().toRay2D();
 		angle = Angle2D.angle(robotDirection, objectDirection);
-		if (angleToTurn < Math.PI / 60) {
+		angle=Constants.formatAngle(angle);
+		if (Math.abs(angle) < Math.PI / 120) {
 			switch (goal) {
 			case Silo:
 				robot.setState(State.AlignSilo);
@@ -408,7 +425,7 @@ public class StateMachine implements Runnable {
 	}
 
 	public static void main(String[] args) {
-		RobotSticky robot = new RobotSticky(false, 675, 825, Math.PI);
+		RobotSticky robot = new RobotSticky(false);
 		System.out.println("initialized");
 		robot.setState(State.GoObject);
 		new StateMachine(robot).start();

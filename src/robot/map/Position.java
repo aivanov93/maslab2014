@@ -43,9 +43,9 @@ public class Position {
 	}
 	
 	public void motionUpdate(Odometry odometry){
-		x=x+odometry.xMoved()+sampler.nextGaussian()*odometry.xMoved()*0.2;
-		y=y+odometry.yMoved()+sampler.nextGaussian()*odometry.yMoved()*0.2;
-		angle=angle+odometry.angleMoved()+sampler.nextGaussian()*odometry.angleMoved()*0.2;
+		x=x+odometry.xMoved()+sampler.nextGaussian()*odometry.xMoved()*0.6;
+		y=y+odometry.yMoved()+sampler.nextGaussian()*odometry.yMoved()*0.6;
+		angle=angle+odometry.angleMoved()+sampler.nextGaussian()*odometry.angleMoved()*0.6;
 	}
 	
 	public void setWeight(double weight){

@@ -25,8 +25,8 @@ public class BotClientMap {
 	
 	public void load(String s) {
 		String[] parts = s.split(":");
-		int i = 1;
-		this.gridSize = 150;
+		int i = 0;
+		this.gridSize = parseGridSize(parts[i++])*2.54;
 		this.startPose = parsePose(parts[i++]);
 		
 		for (; i < parts.length; i++) {

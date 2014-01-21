@@ -101,15 +101,31 @@ public class Localization implements Runnable {
 			totalWeight += weight;
 		}
 		position = particlesOld[0];
-		// calculate the current best position and resample particles
+		// calculate the current best position
 		for (int i = 0; i < particlesOld.length; i++) {
 			// check if this particle has bigger weight
 			if (particlesOld[i].weight() > position.weight()) {
-				position = particlesOld[i];
+				position = particlesOld[i].clone();
 			}
+
+		}
+
+		// resample particles
+		int getFromOld = (particlesOld.length * 5) / 5;
+		int makeNew = particlesOld.length - getFromOld;
+		
+		//draw from old ones
+		for (int i = 0; i < getFromOld; i++) {
 			// draw a new particle
 			double random = sampler.nextDouble() * totalWeight;
 			particlesNew[i] = drawParticle(random);
+		}
+
+		//make new ones uniformly distributed around the believed position
+		for (int i = 0; i < makeNew; i++) {
+			particlesNew[getFromOld + i] = new Position(position.x()
+					+ noiseDist()/3, position.y() + noiseDist()/3, position.angle()
+					+ noiseAngle()/3, 1);
 		}
 
 	}

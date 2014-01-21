@@ -281,7 +281,7 @@ public class MazeMap implements Runnable {
 	}
 
 	public ArrayList<KPoint> getPath() {
-		return new ArrayList<KPoint>(pathData.points);
+		return pathData.points;
 	}
 
 	/**
@@ -323,8 +323,8 @@ public class MazeMap implements Runnable {
 		g2.setColor(Color.gray);
 		g2.setStroke(new BasicStroke(2));
 		if (pathPoints.size() > 0) {
-			KPoint currentPoint = new KPoint(675, 825);
-			for (int j = 0; j < pathPoints.size(); j++) {
+			KPoint currentPoint =  pathPoints.get(0);
+			for (int j = 1; j < pathPoints.size(); j++) {
 				KPoint nextPoint = pathPoints.get(j);
 				g2.draw(new Line2D.Double(currentPoint.getX(), currentPoint
 						.getY(), nextPoint.getX(), nextPoint.getY()));

@@ -54,7 +54,7 @@ public class Gyroscope extends Sensor {
 	}
 	
 	public double getAngleChangeSinceLastUpdate() {
-		throw new UnsupportedOperationException();
+			return getOmega()*0.1;
 	}
 
 }

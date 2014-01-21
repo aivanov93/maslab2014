@@ -3,45 +3,54 @@ package global;
 import java.util.Arrays;
 import java.util.List;
 
+/**
+ * Various constants
+ *
+ */
 public class Constants {
-	public static int clock=300; // ms
+	/**
+	 * Time constants
+	 */
+	public static int clock=100; // ms
 	public static int totalTime=30; //s
 	
-	public static double robotWidth=68;
-	public static double robotLength=68;
+	/**
+	 * Robot size related constants
+	 */
+	public static double robotRadius=20.32;
 
-	public static double wheelBase=30;
-	public static double wheelRadius=10;
+	public static double wheelBase=20.32;
+	public static double wheelRadius=4.92125;
 	
 	/**
 	 * sensor related constants
 	 */
-	public static int numberOfIRs=6;
-	public static List<Double> irDirections=Arrays.asList(Math.PI/4, 0.0, -Math.PI/4, -Math.PI/2, Math.PI, Math.PI/2);
-	public static double minIRreading=10;
-	public static double maxIRreading=120;
+	public static int numberOfIRs=5;
+	public static List<Double> irDirections=Arrays.asList(Math.PI/2, Math.PI/3, 0.0, -Math.PI/3, -Math.PI/2);
+	public static double minIRreading=3;
+	public static double maxIRreading=100;
 	public static double sideIRspacing=40;
 	public static double readingSTD=2;
 	
-	public static double angleBetweenTopIrs=Math.atan(robotLength/robotWidth);
+
 	
 	/**
 	 * walls related constants
 	 */
 	
-	public static double safeDistanceToWall=68;
+	public static double safeDistanceToWall=25;
 	
 	/**
 	 * for localization
 	 */
 	public static int numberOfParticles=1000;
-	public static double distanceUncertainty=40*2;
+	public static double distanceUncertainty=25*2;
 	public static double angleUncertainty=Math.PI/4*2;
 	
 	public static double motionSTD=10;
 	public static double rotationSTD=Math.PI/60;
 	
-	public static double closeEnough=20;
+	public static double closeEnough=5;
 	/**
 	 * some step constants
 	 */
@@ -57,6 +66,9 @@ public class Constants {
 	
 
 	public static double formatAngle(double angle){
+		System.out.println("before mod "+angle);
+		angle%=Math.PI*2;
+		System.out.println("after mod "+angle);
 		if (angle>Math.PI) angle-=Math.PI*2;
 		if (angle<-Math.PI) angle+=Math.PI*2;
 		return angle;

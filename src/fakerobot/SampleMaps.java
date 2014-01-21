@@ -1,5 +1,7 @@
 package fakerobot;
 
+import global.Constants;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -33,7 +35,7 @@ public class SampleMaps {
 		double[] greenBallsY = { 300 };
 		RobotSimulator map = new RobotSimulator(walls, new LineSegment2D(100, 400, 200, 300), reactors, yellow, redBallsX, redBallsY, greenBallsX,
 				greenBallsY, 5);
-		map.setLocation(40, 40, 500, 200,Math.PI/2);
+		map.setLocation(40, 500, 200,Math.PI/2);
 		return map;
 	}
 	
@@ -50,7 +52,7 @@ public class SampleMaps {
 		RobotSimulator map1 = new RobotSimulator(walls, map.getSilo(), reactors, yellow, redBallsX, redBallsY, greenBallsX,
 				greenBallsY, 5);
 		Position position=map.getPosition();
-		map1.setLocation(68, 68, position.x(), position.y(),position.angle());
+		map1.setLocation(Constants.robotRadius, position.x(), position.y(),position.angle());
 		return map1;
 	}
 }

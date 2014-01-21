@@ -34,9 +34,9 @@ public class Test {
 //		Cytron motor2 = new Cytron(6, 7);
 //		Ultrasonic ultra1 = new Ultrasonic(13, 12);
 		Ultrasonic ultra2 = new Ultrasonic(26, 24);
-		Infrared infra1= new Infrared(10);
-		Infrared infra2= new Infrared(11);
-//		Gyroscope gyro = new Gyroscope(1, 9);
+		//Infrared infra1= new Infrared(10);
+		//Infrared infra2= new Infrared(11);
+	   // Gyroscope gyro = new Gyroscope(1, 9);
 //		Encoder enc = new Encoder(2, 3);
 
 		/*
@@ -46,9 +46,9 @@ public class Test {
 //		comm.registerDevice(motor1);
 //		comm.registerDevice(motor2);
     	comm.registerDevice(ultra2);
-		comm.registerDevice(infra1);
-		comm.registerDevice(infra2);
-//		comm.registerDevice(gyro);
+		//comm.registerDevice(infra1);
+		//comm.registerDevice(infra2);
+		//comm.registerDevice(gyro);
 //		comm.registerDevice(enc);
 
 		// Send information about connected devices to the Maple
@@ -61,7 +61,7 @@ public class Test {
 			
 			// All sensor classes have getters.
 			//System.out.println(gyro.getOmega() + " " + ultra1.getDistance());
-			System.out.println(ultra2.getDistance()+" "+infra1.getDistance() + "     " +  infra2.getDistance());
+			System.out.println(ultra2.getDistance()/*+" "+infra1.getDistance() + "     " +  infra2.getDistance()*/);
 			//System.out.println(enc.getTotalAngularDistance() + " " + enc.getAngularSpeed());
 			
 			// All actuator classes have setters.

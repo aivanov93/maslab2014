@@ -81,10 +81,10 @@ public class RangeSensors {
 		if (irSideTop>0 && irSideBottom>0){
 			angle=Math.atan(coeff*(irSideTop - irSideBottom) / Constants.sideIRspacing);
 		} else { // if the bottom side one is out of range
-			double height= irHeadAngled/Math.sin(Constants.angleBetweenTopIrs);	
-			double wallLength = this.cosineLaw(irSideTop, irHeadAngled, Constants.angleBetweenTopIrs);
-			angle=Math.acos(height/wallLength);
-			if (angleCosineLaw(wallLength, irSideTop, irHeadAngled)<0) angle*=-1;
+		//	double height= irHeadAngled/Math.sin(Constants.angleBetweenTopIrs);	
+		//	double wallLength = this.cosineLaw(irSideTop, irHeadAngled, Constants.angleBetweenTopIrs);
+	//		angle=Math.acos(height/wallLength);
+			//if (angleCosineLaw(wallLength, irSideTop, irHeadAngled)<0) angle*=-1;
 		} 
 		return angle;
 	}

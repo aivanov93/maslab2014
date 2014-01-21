@@ -56,8 +56,7 @@ public class RobotSimulator implements RobotEnviroment {
 	/**
 	 * Represents the current position of the robot
 	 */
-	private SimplePolygon2D position = Polygons2D.createOrientedRectangle(
-			new Point2D(5, 5), 7, 5, 0);
+	private Circle2D position;
 
 	
 	/**
@@ -79,12 +78,12 @@ public class RobotSimulator implements RobotEnviroment {
 	 */
 	private double angleOfView = 50 * Math.PI / 180;
 	
-	private double maxSpeed = 8 * Constants.clock / 100f;
+	private double maxSpeed = 4 * Constants.clock / 100f;
 	private double maxAngularSpeed = Math.PI / 2 / 10 * Constants.clock / 100f;
 
 	private Random noiseGenerator = new Random();
 
-	private double length, width;
+	private double radius;
 
 	
 	private HashMap<LineSegment2D, SimpleEntry<Integer, Integer>> reactorBalls = new HashMap<LineSegment2D, SimpleEntry<Integer, Integer>>();
@@ -162,12 +161,12 @@ public class RobotSimulator implements RobotEnviroment {
 	 * @param startY
 	 *            starting y position
 	 */
-	public void setLocation(double width, double height, double startX,
+	public void setLocation(double radius, double startX,
 			double startY, double angle) {
-		position = Polygons2D.createOrientedRectangle(new Point2D(startX,
-				startY), height, width, angle);
-		length = height;
-		this.width = width;
+		position = new Circle2D(new Point2D(startX,
+				startY), radius);
+		robotAngle=angle;
+		this.radius = radius;
 	}
 
 	public void update() {
@@ -179,13 +178,11 @@ public class RobotSimulator implements RobotEnviroment {
 
 	public void updatePosition() {
 
-		// the head of the robot
-		head = Point2D.midPoint(position.vertex(1), position.vertex(2));
-		center = position.centroid();
-
-		// we find the direction as a ray
-		direction = new Ray2D(center, head);
-		robotAngle = direction.horizontalAngle();
+		center = position.center();
+		
+		direction = new Ray2D(center, robotAngle);
+		head = position.intersections(direction).iterator().next();		
+		
 	}
 
 	/**
@@ -239,27 +236,23 @@ public class RobotSimulator implements RobotEnviroment {
 		// calculate the required translation and translation
 		angleMoved = noised(w);
 
-		System.out.println("really moved " + xMoved + " " + yMoved + " "
-				+ angleMoved);
+	
 		// actually move the robot
-		position = Polygons2D.createOrientedRectangle(new Point2D(center.x()
-				+ xMoved, center.y() + yMoved), length, width, robotAngle
-				+ angleMoved);
+		position = new Circle2D(new Point2D(center.x()
+				+ xMoved, center.y() + yMoved), radius);
+		robotAngle+=angleMoved;
 
 		// update odometry
 		yMoved = noised(yMoved);
 		xMoved = noised(xMoved);
 		angleMoved = noised(angleMoved);
 
-		System.out.println("odometry " + xMoved + " " + yMoved + " "
-				+ angleMoved);
+	
 		// check if the robots collected any red balls
 		for (int i = 0; i < redBalls.size(); i++) {
 			Circle2D redBall = redBalls.get(i);
 			boolean touched = redBall
-					.intersections(
-							new LineSegment2D(position.vertex(2), position
-									.vertex(1))).iterator().hasNext();
+					.intersections(position).iterator().hasNext();
 			if (touched) {
 				redBallsCollected++;
 				ballsCollected++;
@@ -271,9 +264,7 @@ public class RobotSimulator implements RobotEnviroment {
 		for (int i = 0; i < greenBalls.size(); i++) {
 			Circle2D greenBall = greenBalls.get(i);
 			boolean touched = greenBall
-					.intersections(
-							new LineSegment2D(position.vertex(2), position
-									.vertex(1))).iterator().hasNext();
+					.intersections(position).iterator().hasNext();
 			if (touched) {
 				greenBallsCollected++;
 				ballsCollected++;
@@ -471,35 +462,12 @@ public class RobotSimulator implements RobotEnviroment {
 	public void updateReadings(RangeSensors irSensors) {
 		updatePosition();
 
-		// corners
-		Point2D vLeftTop = position.vertex(2);
-		Point2D vRightTop = position.vertex(1);
-		Point2D vRightBottom = position.vertex(0);
-		Point2D vLeftBottom = position.vertex(3);
-		Point2D vRightMiddle = Point2D.midPoint(vRightTop, vRightBottom);
-		Point2D vLeftMiddle = Point2D.midPoint(vLeftBottom, vLeftTop);
-
-		// create rays for each of the sensors
-		List<Ray2D> irs = new ArrayList<Ray2D>();
-		List<Point2D> sources = new ArrayList<Point2D>();
-		irs.add(new Ray2D(center, vLeftTop));
-		sources.add(head);
-		irs.add(new Ray2D(center, head));
-		sources.add(head);
-		irs.add(new Ray2D(center, vRightTop));
-		sources.add(head);
-		irs.add(new Ray2D(center, vRightMiddle));
-		sources.add(vRightMiddle);
-		irs.add(new Ray2D(head, center));
-		sources.add(Point2D.midPoint(vRightBottom, vLeftBottom));
-		irs.add(new Ray2D(center, vLeftMiddle));
-		sources.add(vLeftMiddle);
-
 		// calculate and update readings
-		for (int i = 0; i < irs.size(); i++) {
-
-			double distanceToMazeWall = this.mazeIntersect(sources.get(i),
-					irs.get(i));
+		for (int i = 0; i < Constants.numberOfIRs; i++) {
+			Ray2D direction=new Ray2D(position.center(), Constants.irDirections.get(i)+robotAngle);
+			Point2D source=position.intersections(direction).iterator().next();
+			double distanceToMazeWall = this.mazeIntersect(source,
+					direction);
 			if (distanceToMazeWall > Constants.maxIRreading
 					|| distanceToMazeWall < Constants.minIRreading) {
 				distanceToMazeWall = -1.0;
@@ -597,11 +565,13 @@ public class RobotSimulator implements RobotEnviroment {
 
 		// draw the robot
 		g.setColor(Color.black);
+		
 		position.draw(g);
 		g.setColor(Color.red);
-		g.setStroke(new BasicStroke(30));
-		head.draw(g);
-		System.out.println("printed");
+		g.setStroke(new BasicStroke(5));
+		Circle2D face=new Circle2D(head,5);
+		face.draw(g);
+	
 
 	}
 
