@@ -83,7 +83,7 @@ public class RobotSticky implements Robot {
 		gui = new MapGUI(hardware, localization,mazeMap);
 		
 		// initialize sensors, driver and camera
-		this.driver = new Driver(0.1, 0.0, 0.005, 0.25, 0.0, 0.003);
+		this.driver = new Driver(0.2, 0.0, 0.05, 0.6, 0.0, 0.05);
 		this.camera = new VisionDetector();
 	}
 

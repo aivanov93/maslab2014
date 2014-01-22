@@ -133,17 +133,35 @@ public class StateMachine implements Runnable {
 		robot.move(distance, angle);
 	}
 
-	public void correctMovement() {
+	public void correctMovement(){
+		
+	}
+	public void correctPathFollowing() {
 	
-		if (Math.abs(angle) > Math.PI / 8)
+		if (Math.abs(angle) > Math.PI / 6)
 			distance = 0;
 		
 		// TODO implement wall correction
 	}
 	
 	public void correctForWalls(){
-		for (int i=0; i<Constants.numberOfIRs;i++){
-			//if (robot.irs().get(i)<3)
+		System.out.println("all readings "+ robot.irs().getAsList());
+		
+		if (robot.irs().get(0)<Constants.minDistanceToWall){ // if the leftmost sensor is too close to the wall
+			if (robot.irs().get(1)<robot.irs().get(0)+1){ // if the robot faces the wall
+				//if (angle>-Math.PI/3) 
+					angle=-Math.PI;
+			}
+		}
+		
+		if (robot.irs().get(4)<Constants.minDistanceToWall){ // if the rightmost sensor is too close to the wall
+			if (robot.irs().get(3)<robot.irs().get(4)+1){ // if the robot faces the wall
+				//if (angle<Math.PI/3) 
+				   angle=Math.PI;
+			}
+		}
+		if (robot.irs().get(2)<Constants.minDistanceToWall){ // if a wall is right in front
+			distance=0;
 		}
 	}
 
@@ -244,7 +262,6 @@ public class StateMachine implements Runnable {
 	
 
 	public void goObject() {
-		System.out.println("in goObject");
 		while (robot.localization().getPosition().isClose(path.get(0))) {
 			path.remove(0);
 			if (path.size()==0) break;
@@ -258,6 +275,8 @@ public class StateMachine implements Runnable {
 			distance = dist;
 			angle = robot.localization().getPosition().angle(path.get(0));
 		}
+		correctPathFollowing();
+		correctForWalls();
 	}
 
 	/**
@@ -273,6 +292,7 @@ public class StateMachine implements Runnable {
 			robot.setState(State.GoBall);
 			System.out.println(" angle to ball form camera "
 					+ robot.camera().biggestBall().angle());
+			
 			stepsAllowedToMissObject = Constants.allowedToMiss;
 		} else if (robot.seesWall()) {
 			robot.setState(State.FollowWall);

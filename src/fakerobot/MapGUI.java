@@ -42,16 +42,17 @@ public class MapGUI extends JFrame {
 		public void paintComponent(Graphics g){
 			Graphics2D g2 = (Graphics2D)g;
 			g2.setColor(Color.white);
-			g2.fillRect(0, 0, 1100, 1080);
+			g2.fillRect(0, 0, 500, 500);
 			g2.scale(1, -1);
-			g2.translate(0, -900);
+		//	g2.scale(2,2);
+			g2.translate(0, -350);
 			map.draw(g2);	
 			localization.draw(g2);
 			mazeMap.draw(g2);
 		}
 		public Panel(){
 			super();
-			this.setPreferredSize(new Dimension(1100, 1080));
+			this.setPreferredSize(new Dimension(500, 500));
 		}
 		
 	}
@@ -119,7 +120,7 @@ public class MapGUI extends JFrame {
 		this.add(panel);		
 		panel.repaint();
 		
-		this.setPreferredSize(new Dimension(1100, 1080));
+		this.setPreferredSize(new Dimension(500, 500));
 		this.pack();
 		this.setVisible(true);
 		

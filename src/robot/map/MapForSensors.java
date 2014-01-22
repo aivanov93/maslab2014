@@ -70,6 +70,14 @@ public class MapForSensors {
 
 		return source.distance(closestPoint);
 	}
+	
+	 public static double gaussian(double x) {
+	        return Math.exp(-x*x / 2) / Math.sqrt(2 * Math.PI);
+	    }
+	
+	 public static double gaussian(double x, double mu, double sigma) {
+	        return gaussian((x - mu) / sigma) / sigma;
+	  }
 
 	/**
 	 * Calculates the probability of the robot being at this position
@@ -88,22 +96,23 @@ public class MapForSensors {
 		position = new Circle2D(new Point2D(x, y),
 				Constants.robotRadius);
 		updatePosition();
-		// corners
 		
-
+		int uncertainty=0;
 		// calculate and update readings
 		for (int i = 0; i < Constants.numberOfIRs; i++) {
 			Ray2D direction=new Ray2D(position.center(), Constants.irDirections.get(i)+angle);
 			Point2D source=position.intersections(direction).iterator().next();
-			double distanceToMazeWall = this.mazeIntersect(source,
+			double predictedReading = this.mazeIntersect(source,
 					direction);
-			// System.out.println("*******sensors"+distanceToMazeWall+" "+sensors.get(i));
-			if (sensors.get(i) > 0) {
-				double error = Math.abs(distanceToMazeWall - sensors.get(i))
-						/ sensors.get(i);
-				probability *= (1 - error);
-			}
+			double worldReading=sensors.get(i);
+			if (worldReading==Constants.maxIRreading+1 && predictedReading==Constants.maxIRreading+1) uncertainty++;
+			if (worldReading==1 && predictedReading==1) uncertainty++;
+			double error = gaussian( worldReading, predictedReading, 1);
+			//System.out.println("probability "+error+ "for readings "+worldReading+ " "+predictedReading);
+			probability *=  error;
+		
 		}
+		if (uncertainty>3) probability=0.000;
 		return probability;
 
 	}

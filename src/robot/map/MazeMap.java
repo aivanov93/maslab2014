@@ -186,7 +186,7 @@ public class MazeMap implements Runnable {
 		frame.setSize(1200, 1080);
 		frame.add(renderComponent);
 		renderComponent.repaint();
-		frame.setVisible(true);
+		//frame.setVisible(true);
 	}
 
 	public static void main(String[] args) {

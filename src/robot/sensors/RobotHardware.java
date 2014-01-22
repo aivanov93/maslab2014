@@ -3,6 +3,7 @@ package robot.sensors;
 import java.awt.Graphics2D;
 
 import java.util.*;
+
 import maple.comm.MapleComm;
 import maple.comm.MapleIO;
 import maple.devices.actuators.Cytron;
@@ -19,32 +20,61 @@ import jssc.SerialPort;
 public class RobotHardware implements RobotEnviroment {
 
 	MapleComm comm;
-	Cytron motor1, motor2;
-	List<Ultrasonic> ultrasonics;
-	Encoder encLeft, encRight;
-	Gyroscope gyro;
+	public Cytron motor1, motor2;
+	public List<Ultrasonic> ultrasonics=new ArrayList<Ultrasonic>();
+	public Encoder encLeft, encRight;
+	public Gyroscope gyro;
 
 	/**
 	 * Initializes all the required robot's part
 	 */
 	public RobotHardware() {
 		comm = new MapleComm(MapleIO.SerialPortType.LINUX);
-		motor1 = new Cytron(4, 5);
-		motor2 = new Cytron(6, 7);
+		motor1 = new Cytron(2, 1);
+		motor2 = new Cytron(4, 3);
+		Ultrasonic ultra;
 		for (int i = 0; i < 5; i++) {
-			Ultrasonic ultra = new Ultrasonic(13, 12);
-			ultrasonics.add(ultra);
-			comm.registerDevice(ultra);
+			switch (i) {
+			case 0:
+				ultra = new Ultrasonic(37,35);
+				System.out.println(ultra);
+				ultrasonics.add(ultra);
+				comm.registerDevice(ultra);
+				break;
+				/*
+			case 1:
+				ultra = new Ultrasonic(0, 5);
+				ultrasonics.add(ultra);
+				comm.registerDevice(ultra);
+				break;
+			case 2:
+				ultra = new Ultrasonic(25, 24);
+				ultrasonics.add(ultra);
+				comm.registerDevice(ultra);
+				break;
+			case 3:
+				ultra = new Ultrasonic(31, 14);
+				ultrasonics.add(ultra);
+				comm.registerDevice(ultra);
+				break;
+			case 4:
+				ultra = new Ultrasonic(15, 7);
+				ultrasonics.add(ultra);
+				comm.registerDevice(ultra);
+				break;
+				*/
+			}
+
 		}
 		gyro = new Gyroscope(1, 9);
-		encLeft = new Encoder(2, 3);
-		encRight = new Encoder(2, 3);
+		encLeft = new Encoder(30, 37);
+		encRight = new Encoder(8, 35);
 
-		comm.registerDevice(motor1);
-		comm.registerDevice(motor2);
-		comm.registerDevice(gyro);
-		comm.registerDevice(encLeft);
-		comm.registerDevice(encRight);
+		//comm.registerDevice(motor1);
+		//comm.registerDevice(motor2);
+		//comm.registerDevice(gyro);
+		//comm.registerDevice(encLeft);
+		//comm.registerDevice(encRight);
 		comm.initialize();
 	}
 
@@ -56,10 +86,11 @@ public class RobotHardware implements RobotEnviroment {
 		for (int i = 0; i < Constants.numberOfIRs; i++) {
 			range.set(i, ultrasonics.get(i).getDistance());
 		}
+		
 	}
 
 	public void updateCamera(VisionDetector detector) {
-	
+
 	}
 
 	public int redBallsInside() {
@@ -75,8 +106,9 @@ public class RobotHardware implements RobotEnviroment {
 	}
 
 	public void move(double speed, double angularSpeed) {
-		motor1.setSpeed(speed+angularSpeed);
-		motor2.setSpeed(speed-angularSpeed);
+		motor1.setSpeed(speed + angularSpeed);
+		motor2.setSpeed(speed - angularSpeed);
+		comm.transmit();
 	}
 
 	public void setState(State state) {
@@ -96,17 +128,42 @@ public class RobotHardware implements RobotEnviroment {
 
 	@Override
 	public void updateOdometry(Odometry odometry) {
-		double dl=encLeft.getDeltaAngularDistance()*Constants.wheelRadius;
-		double dr=encRight.getDeltaAngularDistance();
-		double dtotal=(dl+dr)/2;
-		double theta=(dr-dl)/Constants.wheelBase;
-		odometry.set(dtotal*Math.sin(theta), dtotal*Math.cos(theta), gyro.getAngleChangeSinceLastUpdate());
+		double dl = encLeft.getDeltaAngularDistance() * Constants.wheelRadius;
+		double dr = encRight.getDeltaAngularDistance();
+		double dtotal = (dl + dr) / 2;
+		double theta = (dr - dl) / Constants.wheelBase;
+		odometry.set(dtotal * Math.sin(theta), dtotal * Math.cos(theta),
+				gyro.getAngleChangeSinceLastUpdate());
 	}
 
 	@Override
 	public void draw(Graphics2D g) {
 		// TODO Auto-generated method stub
 
+	}
+	
+	public static void main(String[] args){
+		RobotHardware hardware=new RobotHardware();
+		hardware.update();
+		for (int i=0; i<100; i++){
+			hardware.update();
+			System.out.println(hardware.ultrasonics.get(0).getDistance());//+ " "+hardware.ultrasonics.get(1).getDistance()+ " "+hardware.ultrasonics.get(2).getDistance()+ " "+hardware.ultrasonics.get(3).getDistance()+ " "+hardware.ultrasonics.get(4).getDistance() );
+			System.out.println(hardware.encLeft.getDeltaAngularDistance());
+			try {
+				Thread.sleep(500);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		}
+		
+		hardware.motor1.setSpeed(0);
+		hardware.motor2.setSpeed(0);
+		hardware.comm.transmit();
+		try {
+			Thread.sleep(500);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
 	}
 
 }

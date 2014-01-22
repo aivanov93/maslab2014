@@ -29,6 +29,10 @@ public class RangeSensors {
 		readings.set(index, value);
 	}
 	
+	public List<Double> getAsList(){
+		return new ArrayList<Double>(readings);
+	}
+	
 	private double cosineLaw(double side1, double side2, double angle){
 		return Math.sqrt(side1*side1+side2*side2-2*side1*side2*Math.cos(angle));
 	}

@@ -31,7 +31,6 @@ public class Odometry {
 	}
 	
 	public void set(double xMoved, double yMoved, double angleMoved){
-		System.out.println("*****************ODOM "+xMoved+" "+yMoved+" "+angleMoved);
 		this.x=xMoved;
 		this.y=yMoved;
 		this.angle=angleMoved;

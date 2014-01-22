@@ -111,7 +111,7 @@ public class Localization implements Runnable {
 		}
 
 		// resample particles
-		int getFromOld = (particlesOld.length * 5) / 5;
+		int getFromOld = (particlesOld.length * 9) / 10;
 		int makeNew = particlesOld.length - getFromOld;
 		
 		//draw from old ones
@@ -124,8 +124,8 @@ public class Localization implements Runnable {
 		//make new ones uniformly distributed around the believed position
 		for (int i = 0; i < makeNew; i++) {
 			particlesNew[getFromOld + i] = new Position(position.x()
-					+ noiseDist()/3, position.y() + noiseDist()/3, position.angle()
-					+ noiseAngle()/3, 1);
+					+ noiseDist(), position.y() + noiseDist(), position.angle()
+					+ noiseAngle(), 1);
 		}
 
 	}
@@ -160,7 +160,7 @@ public class Localization implements Runnable {
 	}
 
 	public Position getPosition() {
-		return position;
+		return position.clone();
 	}
 
 	/**

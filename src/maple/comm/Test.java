@@ -30,10 +30,10 @@ public class Test {
 		 * Devices are generally either Sensors or Actuators. For example, a
 		 * motor controller is an actuator, and an encoder is a sensor.
 		 */
-//		Cytron motor1 = new Cytron(4, 5);
-//		Cytron motor2 = new Cytron(6, 7);
+		Cytron motor1 = new Cytron(2, 1);
+		Cytron motor2 = new Cytron(6, 5);
 //		Ultrasonic ultra1 = new Ultrasonic(13, 12);
-		Ultrasonic ultra2 = new Ultrasonic(26, 24);
+	//	Ultrasonic ultra2 = new Ultrasonic(26, 24);
 		//Infrared infra1= new Infrared(10);
 		//Infrared infra2= new Infrared(11);
 	   // Gyroscope gyro = new Gyroscope(1, 9);
@@ -43,9 +43,9 @@ public class Test {
 		 * Build up a list of devices that will be sent to the Maple for the
 		 * initialization step.
 		 */
-//		comm.registerDevice(motor1);
-//		comm.registerDevice(motor2);
-    	comm.registerDevice(ultra2);
+		comm.registerDevice(motor1);
+		comm.registerDevice(motor2);
+//    	comm.registerDevice(ultra2);
 		//comm.registerDevice(infra1);
 		//comm.registerDevice(infra2);
 		//comm.registerDevice(gyro);
@@ -61,15 +61,15 @@ public class Test {
 			
 			// All sensor classes have getters.
 			//System.out.println(gyro.getOmega() + " " + ultra1.getDistance());
-			System.out.println(ultra2.getDistance()/*+" "+infra1.getDistance() + "     " +  infra2.getDistance()*/);
+			//System.out.println(ultra2.getDistance()/*+" "+infra1.getDistance() + "     " +  infra2.getDistance()*/);
 			//System.out.println(enc.getTotalAngularDistance() + " " + enc.getAngularSpeed());
 			
 			// All actuator classes have setters.
-			//motor1.setSpeed(0.2);
-			//motor2.setSpeed(-0.3);
+			motor1.setSpeed(0);
+			motor2.setSpeed(0);
 
 			// Request that the Maple write updated values to the actuators
-			//comm.transmit();
+			comm.transmit();
 			
 			// Just for console-reading purposes; don't worry about timing
 		try {

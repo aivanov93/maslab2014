@@ -78,8 +78,8 @@ public class RobotSimulator implements RobotEnviroment {
 	 */
 	private double angleOfView = 50 * Math.PI / 180;
 	
-	private double maxSpeed = 4 * Constants.clock / 100f;
-	private double maxAngularSpeed = Math.PI / 2 / 10 * Constants.clock / 100f;
+	private double maxSpeed =6  * Constants.clock / 100f; //4
+	private double maxAngularSpeed = Math.PI / 2 / 10 * Constants.clock / 100f; //2
 
 	private Random noiseGenerator = new Random();
 
@@ -464,16 +464,15 @@ public class RobotSimulator implements RobotEnviroment {
 
 		// calculate and update readings
 		for (int i = 0; i < Constants.numberOfIRs; i++) {
-			Ray2D direction=new Ray2D(position.center(), Constants.irDirections.get(i)+robotAngle);
-			Point2D source=position.intersections(direction).iterator().next();
+			Ray2D beam=new Ray2D(position.center(), Constants.irDirections.get(i)+robotAngle);
+			Point2D source=position.intersections(beam).iterator().next();
 			double distanceToMazeWall = this.mazeIntersect(source,
-					direction);
-			if (distanceToMazeWall > Constants.maxIRreading
-					|| distanceToMazeWall < Constants.minIRreading) {
-				distanceToMazeWall = -1.0;
-			}
+					beam);
+			if (distanceToMazeWall > Constants.maxIRreading) distanceToMazeWall=Constants.maxIRreading+1;
+			else if (distanceToMazeWall < Constants.minIRreading) distanceToMazeWall =1;
+			else distanceToMazeWall=noised(distanceToMazeWall);
 
-			irSensors.set(i, noised(distanceToMazeWall));
+			irSensors.set(i, distanceToMazeWall);
 		}
 
 	}
