@@ -30,39 +30,39 @@ public class RobotHardware implements RobotEnviroment {
 	 */
 	public RobotHardware() {
 		comm = new MapleComm(MapleIO.SerialPortType.LINUX);
-		motor1 = new Cytron(2, 1);
-		motor2 = new Cytron(4, 3);
+		motor1 = new Cytron(4, 3);
+		motor2 = new Cytron(5, 6);
 		Ultrasonic ultra;
 		for (int i = 0; i < 5; i++) {
 			switch (i) {
-			case 0:
-				ultra = new Ultrasonic(0,35);
+			/*case 0:
+				ultra = new Ultrasonic(16,24);
 				System.out.println(ultra);
 				ultrasonics.add(ultra);
 				comm.registerDevice(ultra);
 				break;
-				/*
+				
 			case 1:
-				ultra = new Ultrasonic(0, 5);
+				ultra = new Ultrasonic(17,25);
 				ultrasonics.add(ultra);
 				comm.registerDevice(ultra);
 				break;
 			case 2:
-				ultra = new Ultrasonic(25, 24);
+				ultra = new Ultrasonic(15, 14);
 				ultrasonics.add(ultra);
 				comm.registerDevice(ultra);
 				break;
-			case 3:
-				ultra = new Ultrasonic(31, 14);
+			/*case 3:
+				ultra = new Ultrasonic(18,26);
 				ultrasonics.add(ultra);
 				comm.registerDevice(ultra);
 				break;
 			case 4:
-				ultra = new Ultrasonic(15, 7);
+				ultra = new Ultrasonic(19, 29);
 				ultrasonics.add(ultra);
 				comm.registerDevice(ultra);
-				break;
-				*/
+				break;*/
+				
 			}
 
 		}
@@ -72,7 +72,7 @@ public class RobotHardware implements RobotEnviroment {
 
 		//comm.registerDevice(motor1);
 		//comm.registerDevice(motor2);
-		//comm.registerDevice(gyro);
+		comm.registerDevice(gyro);
 		//comm.registerDevice(encLeft);
 		//comm.registerDevice(encRight);
 		comm.initialize();
@@ -145,29 +145,26 @@ public class RobotHardware implements RobotEnviroment {
 	public static void main(String[] args){
 		RobotHardware hardware=new RobotHardware();
 		hardware.update();
-		for (int i=0; i<100; i++){
+		//hardware.motor1.setSpeed(0.5);
+		//hardware.motor2.setSpeed(0.5);
+		//hardware.comm.transmit();
+		
+		for (int i=0; i<40; i++){
 			hardware.update();
-			System.out.println(hardware.ultrasonics.get(0).getDistance());//+ " "+hardware.ultrasonics.get(1).getDistance()+ " "+hardware.ultrasonics.get(2).getDistance()+ " "+hardware.ultrasonics.get(3).getDistance()+ " "+hardware.ultrasonics.get(4).getDistance() );
-			//System.out.println(hardware.encLeft.getDeltaAngularDistance());
+			//System.out.println("sonars "+hardware.ultrasonics.get(0).getDistance()+ " "+hardware.ultrasonics.get(1).getDistance()+ " "+hardware.ultrasonics.get(2).getDistance());//+ " "+hardware.ultrasonics.get(3).getDistance()+ " "+hardware.ultrasonics.get(4).getDistance() );
+			System.out.println("gyro "+hardware.gyro.getAngleChangeSinceLastUpdate());
+			//System.out.println("left enc "+hardware.encLeft.getDeltaAngularDistance());
 			try {
 				Thread.sleep(500);
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
 		}
-	/**	
-		hardware.motor1.setSpeed(0.5);
-		hardware.motor2.setSpeed(0.5);
-		hardware.comm.transmit();
-		try {
-			Thread.sleep(2000);
-		} catch (InterruptedException e) {
-			e.printStackTrace();
-		}
-		hardware.motor1.setSpeed(0);
-		hardware.motor2.setSpeed(0);
-		hardware.comm.transmit();
-		**/
+	
+		//hardware.motor1.setSpeed(0);
+		//hardware.motor2.setSpeed(0);
+		//hardware.comm.transmit();
+		
 	}
 
 }
