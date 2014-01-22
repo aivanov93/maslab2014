@@ -36,7 +36,7 @@ public class RobotHardware implements RobotEnviroment {
 		for (int i = 0; i < 5; i++) {
 			switch (i) {
 			case 0:
-				ultra = new Ultrasonic(37,35);
+				ultra = new Ultrasonic(0,35);
 				System.out.println(ultra);
 				ultrasonics.add(ultra);
 				comm.registerDevice(ultra);
@@ -148,22 +148,26 @@ public class RobotHardware implements RobotEnviroment {
 		for (int i=0; i<100; i++){
 			hardware.update();
 			System.out.println(hardware.ultrasonics.get(0).getDistance());//+ " "+hardware.ultrasonics.get(1).getDistance()+ " "+hardware.ultrasonics.get(2).getDistance()+ " "+hardware.ultrasonics.get(3).getDistance()+ " "+hardware.ultrasonics.get(4).getDistance() );
-			System.out.println(hardware.encLeft.getDeltaAngularDistance());
+			//System.out.println(hardware.encLeft.getDeltaAngularDistance());
 			try {
 				Thread.sleep(500);
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
 		}
-		
-		hardware.motor1.setSpeed(0);
-		hardware.motor2.setSpeed(0);
+	/**	
+		hardware.motor1.setSpeed(0.5);
+		hardware.motor2.setSpeed(0.5);
 		hardware.comm.transmit();
 		try {
-			Thread.sleep(500);
+			Thread.sleep(2000);
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
+		hardware.motor1.setSpeed(0);
+		hardware.motor2.setSpeed(0);
+		hardware.comm.transmit();
+		**/
 	}
 
 }
