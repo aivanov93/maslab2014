@@ -35,7 +35,7 @@ public class RobotHardware implements RobotEnviroment {
 		Ultrasonic ultra;
 		for (int i = 0; i < 5; i++) {
 			switch (i) {
-			/*case 0:
+			case 0:
 				ultra = new Ultrasonic(16,24);
 				System.out.println(ultra);
 				ultrasonics.add(ultra);
@@ -67,14 +67,14 @@ public class RobotHardware implements RobotEnviroment {
 
 		}
 		gyro = new Gyroscope(1, 9);
-		encLeft = new Encoder(30, 37);
-		encRight = new Encoder(8, 35);
+		encLeft = new Encoder(18, 27);
+		encRight = new Encoder(19, 29);
 
-		//comm.registerDevice(motor1);
-		//comm.registerDevice(motor2);
+		comm.registerDevice(motor1);
+		comm.registerDevice(motor2);
 		comm.registerDevice(gyro);
-		//comm.registerDevice(encLeft);
-		//comm.registerDevice(encRight);
+		comm.registerDevice(encLeft);
+		comm.registerDevice(encRight);
 		comm.initialize();
 	}
 
@@ -145,15 +145,16 @@ public class RobotHardware implements RobotEnviroment {
 	public static void main(String[] args){
 		RobotHardware hardware=new RobotHardware();
 		hardware.update();
-		//hardware.motor1.setSpeed(0.5);
-		//hardware.motor2.setSpeed(0.5);
-		//hardware.comm.transmit();
 		
 		for (int i=0; i<40; i++){
 			hardware.update();
+			hardware.motor1.setSpeed(i*0.025);
+			hardware.motor2.setSpeed(i*0.025);
+			hardware.comm.transmit();
+			
 			//System.out.println("sonars "+hardware.ultrasonics.get(0).getDistance()+ " "+hardware.ultrasonics.get(1).getDistance()+ " "+hardware.ultrasonics.get(2).getDistance());//+ " "+hardware.ultrasonics.get(3).getDistance()+ " "+hardware.ultrasonics.get(4).getDistance() );
-			System.out.println("gyro "+hardware.gyro.getAngleChangeSinceLastUpdate());
-			//System.out.println("left enc "+hardware.encLeft.getDeltaAngularDistance());
+			//System.out.println("gyro "+hardware.gyro.getAngleChangeSinceLastUpdate());
+			System.out.println("left enc "+hardware.encLeft.getDeltaAngularDistance()+" right enc "+hardware.encRight.getDeltaAngularDistance());
 			try {
 				Thread.sleep(500);
 			} catch (InterruptedException e) {
@@ -161,9 +162,9 @@ public class RobotHardware implements RobotEnviroment {
 			}
 		}
 	
-		//hardware.motor1.setSpeed(0);
-		//hardware.motor2.setSpeed(0);
-		//hardware.comm.transmit();
+		hardware.motor1.setSpeed(0);
+		hardware.motor2.setSpeed(0);
+		hardware.comm.transmit();
 		
 	}
 
