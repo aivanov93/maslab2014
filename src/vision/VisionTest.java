@@ -12,7 +12,7 @@ import vision.detector.VisionDetector;
 
 public class VisionTest {
 	
-	private static boolean log=false;
+	private static boolean log=true;
 	static {
 		System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
 	}
@@ -20,7 +20,7 @@ public class VisionTest {
 	
 	@Test
 	public void twoBallsSilo(){
-	  Mat im=Highgui.imread("resources/1.png");
+	  Mat im=Highgui.imread("resources/field/image4.png");
 	  ImageProcessor proc=new ImageProcessor(log,1);
 	  VisionDetector detector=new VisionDetector();
 	  proc.process(im, detector);
@@ -30,7 +30,7 @@ public class VisionTest {
 	
 	@Test
 	public void twoBallsOverlapAndSilo(){
-	  Mat im=Highgui.imread("resources/2.png");
+	  Mat im=Highgui.imread("resources/field/image2.png");
 	  ImageProcessor proc=new ImageProcessor(log,2);
 	  VisionDetector detector=new VisionDetector();
 	  proc.process(im, detector);
@@ -41,7 +41,7 @@ public class VisionTest {
 		
 	@Test
 	public void GreenRedBallSilo(){
-	  Mat im=Highgui.imread("resources/4.png");
+	  Mat im=Highgui.imread("resources/field/image3.png");
 	  ImageProcessor proc=new ImageProcessor(log,4);
 	  VisionDetector detector=new VisionDetector();
 	  proc.process(im, detector);
