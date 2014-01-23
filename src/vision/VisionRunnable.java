@@ -1,6 +1,6 @@
 package vision;
 
-
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.opencv.core.Core;
 import org.opencv.core.Mat;
@@ -11,9 +11,15 @@ import vision.detector.VisionDetector;
 public class VisionRunnable implements Runnable {
 
 	private VisionDetector detector;
+	private AtomicBoolean oldInformationConsumed;
+	private AtomicBoolean newInformationAvailable;
 
-	public VisionRunnable(VisionDetector detector) {
-		this.detector=detector;
+	public VisionRunnable(VisionDetector detector,
+			AtomicBoolean oldInformationConsumed,
+			AtomicBoolean newInformationAvailable) {
+		this.detector = detector;
+		this.oldInformationConsumed = oldInformationConsumed;
+		this.newInformationAvailable = newInformationAvailable;
 	}
 
 	@Override
@@ -25,7 +31,7 @@ public class VisionRunnable implements Runnable {
 		VideoCapture camera = new VideoCapture();
 		camera.open(1);
 		ImageProcessor processor = new ImageProcessor(true, 2);
-
+		// detector.
 		// Main loop
 		Mat rawImage = new Mat();
 		while (true) {
@@ -37,19 +43,13 @@ public class VisionRunnable implements Runnable {
 					e.printStackTrace();
 				}
 			}
-
-			// Process the image however you like
-
-			synchronized(detector){
-				processor.process(rawImage,detector);
-			}
-			try {
-				Thread.sleep(60);
-			} catch (InterruptedException e) {
-				e.printStackTrace();
+			// check if the  state machine consumed the new information
+			if (oldInformationConsumed.compareAndSet(true, false)) { 
+				// Process the image
+				processor.process(rawImage, detector);
+				newInformationAvailable.getAndSet(true); // announce
 			}
 		}
 
 	}
-
 }

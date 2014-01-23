@@ -24,7 +24,6 @@ import org.opencv.core.CvType;
 import org.opencv.imgproc.Imgproc;
 import org.opencv.core.Scalar;
 
-import Core.FilterOp;
 
 import vision.detector.VisionDetector;
 
@@ -39,12 +38,15 @@ public class NewImageProcessor {
 	private static Scalar greenLeft = new Scalar(43, 100, 50);
 	private static Scalar greenRight = new Scalar(90, 256, 230);
 
-	private static Scalar blueLeft = new Scalar(95, 150, 100);
+	private static Scalar blueLeft = new Scalar(95, 110, 100);
 	private static Scalar blueRight = new Scalar(125, 256, 236);
 
 	private static Scalar yellowLeft = new Scalar(25, 110, 120);
 	private static Scalar yellowRight = new Scalar(35, 256, 256);
 
+	private static Scalar whiteLeft = new Scalar(0, 0, 200);
+	private static Scalar whiteRight = new Scalar(180, 60, 256);
+	
 	private static double minimalArea = 50;
 	private static Size picSize = new Size(320, 240);
 	Mat hierarchy, edges;
@@ -131,6 +133,9 @@ public class NewImageProcessor {
 		} else if (color.equals(Color.yellow)) {
 			rangeLeft = yellowLeft;
 			rangeRight = yellowRight;
+		}  else if (color.equals(Color.white)) {
+			rangeLeft = whiteLeft;
+			rangeRight = whiteRight;
 		}
 		Mat imT = imRed;
 		if (color.equals(Color.green)) {
@@ -205,9 +210,10 @@ public class NewImageProcessor {
 	}
 
 	private void findWallContours(Mat imgHSV, Mat toEdit, Color color) {
+		//Imgproc.Canny(imgHSV, edges, 100, 300);
 		getColor(imgHSV, color);
 		if (log) {
-			Highgui.imwrite("resources/field/blue" + testnumber + ".png", toEdit);
+			Highgui.imwrite("resources/field/blue" + testnumber + ".jpg", toEdit);
 		}
 		// find the contours of all white spots
 		contours.clear();
@@ -223,7 +229,7 @@ public class NewImageProcessor {
 		// find the two largest contours
 		for (int i = 0; i < contours.size(); i++) {
 			double area = Imgproc.contourArea(contours.get(i));
-			if (area > 25) {
+			if (area > 55) {
 				if (color.equals(Color.blue)) {
 					blueContours[numBlue] = contours.get(i);
 					numBlue++;
@@ -237,7 +243,7 @@ public class NewImageProcessor {
 		if (log) {
 			Imgproc.drawContours(toEdit, contours, -1, new Scalar(0, 130, 130),
 					1);
-			Highgui.imwrite("resources/bluewa" + testnumber + ".png", imSlave);
+			Highgui.imwrite("resources/bluewa" + testnumber + ".jpg", imSlave);
 		}
 
 	}
@@ -246,32 +252,28 @@ public class NewImageProcessor {
 		for (int i = 0; i < numBlue; i++) {
 			for (int j = 0; j < blueContours[i].size().height; j++) {
 				double[] data = blueContours[i].get(j, 0);
-				y=(int)data[0]; x=(int) data[1];
-				if (wallHeight[x]<y) wallHeight[x]=y;
+				x=(int)data[0]; y=(int) data[1];
+				if (wallHeight[x]<y) {
+					wallHeight[x]=y;
+				}
 			}
 		}
 		
 		for (int i = 0; i < numYellow; i++) {
 			for (int j = 0; j < yellowContours[i].size().height; j++) {
 				double[] data = yellowContours[i].get(j, 0);
-				y=(int)data[0]; x=(int) data[1];
+				x=(int)data[0]; y=(int) data[1];
 				if (wallHeight[x]<y) wallHeight[x]=y;
 			}
 		}
 		if (log){
 			byte[] whit={(byte)0,(byte)0,(byte)0};
-			imSlave=new Mat(picSize, CvType.CV_8UC1);
-			for (int i=0; i<picSize.width;i++){
-				for (int j=0; j<picSize.height;j++){
-					imSlave.put(j, i, whit);
-				}
-			}
+			
 			byte[] white={(byte)255,(byte)255,(byte)255};
 			for (int i=0; i<wallHeight.length;i++){
-				System.out.println(i+ " "+wallHeight[i]);
 				imSlave.put( wallHeight[i],i, white);
 			}
-			Highgui.imwrite("resources/field/walls" + testnumber + ".png", imSlave);
+			Highgui.imwrite("resources/field/walls" + testnumber + ".jpg", imSlave);
 		}
 	}
 
@@ -316,7 +318,7 @@ public class NewImageProcessor {
 		}
 
 		if (log) {
-			Highgui.imwrite("resources/centroids" + testnumber + ".png", imSlave);
+			Highgui.imwrite("resources/centroids" + testnumber + ".jpg", imSlave);
 		}
 
 	}
@@ -327,7 +329,7 @@ public class NewImageProcessor {
 
 	public void process(Mat rawImage, VisionDetector detector) {
 		for (int i=0; i<picSize.width;i++){
-			wallHeight[0]=1000;
+			wallHeight[i]=0;
 		}
 		Timer timer = new Timer();
 		timer.start();
@@ -339,37 +341,42 @@ public class NewImageProcessor {
 			rawImage.copyTo(imSlave);
 		}
 		blur(rawImage);
+		
 		Imgproc.cvtColor(rawImage, rawImage, Imgproc.COLOR_BGR2HSV);
 		if (log) {
-			Highgui.imwrite("resources/edges" + testnumber + ".png", rawImage);
+			Highgui.imwrite("resources/edges" + testnumber + ".jpg", rawImage);
 		}
 		timer.print("HSV conversion ");
 		timer.start();
 
 		// extract thresholded colors
 
-		/*
-		 * getColor(rawImage, Color.red); getColor(rawImage, Color.green);
-		 */
+		 getColor(rawImage, Color.red); 
+		 getColor(rawImage, Color.green);		 
+		 
+		 // find and analyze contours for red
+		Contour[] contours = findTwoLargestContours(imRed, imSlave);
+		analyzeContours(contours, Color.red, detector);
+
+		// find and analyze contours for green
+		contours = findTwoLargestContours(imGreen, imSlave);
+		analyzeContours(contours, Color.green, detector);
+		 
 		findWallContours(rawImage, imSlave, Color.blue);
 		findWallContours(rawImage, imSlave, Color.yellow);
 		analyzeWalls();
+	//	detector.foundWalls(wallHeight);
+	
 		timer.print("thresholding ");
 		timer.start();
 
 		if (log) {
-			Highgui.imwrite("resources/filtered" + testnumber + ".png", imRed);
+			Highgui.imwrite("resources/filtered" + testnumber + ".jpg", imRed);
 			// Highgui.imwrite("resources/greenfiltered" + testnumber + ".png",
 			// imGreen);
 		}
 
-		// find and analyze contours for red
-		//Contour[] contours = findTwoLargestContours(imRed, imSlave);
-		//analyzeContours(contours, Color.red, detector);
-
-		// find and analyze contours for green
-		//contours = findTwoLargestContours(imGreen, imSlave);
-		//analyzeContours(contours, Color.green, detector);
+		
 
 		timer.print("contours");
 		timer.print("everything");
@@ -379,9 +386,9 @@ public class NewImageProcessor {
 
 
 	public static void main(String[] args) {
-		Mat im = Highgui.imread("resources/field/image4.png");
+		Mat im = Highgui.imread("resources/field/image5.png");
 		System.out.println(im.size().height);
-		NewImageProcessor proc = new NewImageProcessor(true, 1);
+		NewImageProcessor proc = new NewImageProcessor(false, 1);
 		VisionDetector detector = new VisionDetector();
 		proc.process(im, detector);
 

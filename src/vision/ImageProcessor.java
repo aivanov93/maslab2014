@@ -23,7 +23,7 @@ import org.opencv.core.CvType;
 import org.opencv.imgproc.Imgproc;
 import org.opencv.core.Scalar;
 
-import Core.FilterOp;
+//import Core.FilterOp;
 
 import vision.detector.VisionDetector;
 
@@ -50,7 +50,7 @@ public class ImageProcessor {
 	Mat imSlave, imRed, imGreen, imT2;// ,imT;
 	List<MatOfPoint> contours;
 	Scalar rangeLeft, rangeRight;
-	FilterOp edge;
+	//FilterOp edge;
 	static {
 		System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
 	}
@@ -77,7 +77,7 @@ public class ImageProcessor {
 		imT2 = new Mat();
 		// imT=new Mat(picSize, CvType.CV_8UC1);
 		imT2 = new Mat(picSize, CvType.CV_8UC1);
-		edge = new FilterOp("hedge");
+	//	edge = new FilterOp("hedge");
 	}
 
 	/**
@@ -309,12 +309,12 @@ public class ImageProcessor {
 		timer.print("OpenCV  ");
 		
 		
-		edge.apply(image);	
+		//edge.apply(image);	
 		
 		timer.start();
-		edge.apply();
+		//edge.apply();
 		timer.print("shader ");
-		BufferedImage edges = FilterOp.getImage();
+		//BufferedImage edges = FilterOp.getImage();
 		//BufferedImage colors = FilterOp.getImage();
 		
 	}

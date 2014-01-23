@@ -7,7 +7,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
-
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.management.timer.Timer;
 
@@ -17,14 +17,17 @@ import math.geom2d.line.Ray2D;
 
 import robot.main.RobotSticky;
 import straightedge.geom.KPoint;
+import vision.VisionRunnable;
 import vision.detector.ColorObject;
+import vision.detector.VisionDetector;
 
 /**
  * Represents the State Machine of the robot. Uses an instance of Robot and
  * performs the according movements based on current state of the world, e.g.
  * the number of reactors that were score, current time, etc.
  * 
- * The run() imitates one step and the State Machine is scheduled to work at fixed clock rate
+ * The run() imitates one step and the State Machine is scheduled to work at
+ * fixed clock rate
  * 
  * 
  */
@@ -83,25 +86,31 @@ public class StateMachine implements Runnable {
 	 */
 	private int stepsAllowedToMissObject = 0;
 
+	private double distanceToBall;
+	private double angleToBall;
+
 	private Goal goal;
 
 	/**
 	 * To keep track of previous movement
 	 */
+
+	/**
+	 * Vision related flags
+	 */
+	private VisionDetector globalDetector; // used only for reference with the
+											// vision runnable
+	private VisionDetector camera; // used to copy the result from the vision
+									// runnable
+	private AtomicBoolean oldVisionConsumed;
+	private AtomicBoolean newVisionAvailable;
+	private boolean cameraWasUpdated = false;
+
+	/**
+	 * Movement goals
+	 */
 	private double distance = 0;
 	private double angle = 0;
-
-	private double reactorCoefficient() {
-		return 2 * knownReactors;
-	}
-
-	public int reactorsScoredBottom() {
-		return 0; // TODO
-	}
-
-	public int reactorsScoredTop() {
-		return 0; // TODO
-	}
 
 	private final ScheduledExecutorService scheduler = Executors
 			.newScheduledThreadPool(1);
@@ -133,35 +142,50 @@ public class StateMachine implements Runnable {
 		robot.move(distance, angle);
 	}
 
-	public void correctMovement(){
-		
+	public void correctMovement() {
+
 	}
+
 	public void correctPathFollowing() {
-	
+
 		if (Math.abs(angle) > Math.PI / 6)
 			distance = 0;
-		
+
 		// TODO implement wall correction
 	}
-	
-	public void correctForWalls(){
-		System.out.println("all readings "+ robot.irs().getAsList());
-		
-		if (robot.irs().get(0)<Constants.minDistanceToWall){ // if the leftmost sensor is too close to the wall
-			if (robot.irs().get(1)<robot.irs().get(0)+1){ // if the robot faces the wall
-				//if (angle>-Math.PI/3) 
-					angle=-Math.PI;
+
+	public void correctForWalls() {
+		System.out.println("all readings " + robot.irs().getAsList());
+
+		if (robot.irs().get(0) < Constants.minDistanceToWall) { // if the
+																// leftmost
+																// sensor is too
+																// close to the
+																// wall
+			if (robot.irs().get(1) < robot.irs().get(0) + 1) { // if the robot
+																// faces the
+																// wall
+				// if (angle>-Math.PI/3)
+				angle = -Math.PI;
 			}
 		}
-		
-		if (robot.irs().get(4)<Constants.minDistanceToWall){ // if the rightmost sensor is too close to the wall
-			if (robot.irs().get(3)<robot.irs().get(4)+1){ // if the robot faces the wall
-				//if (angle<Math.PI/3) 
-				   angle=Math.PI;
+
+		if (robot.irs().get(4) < Constants.minDistanceToWall) { // if the
+																// rightmost
+																// sensor is too
+																// close to the
+																// wall
+			if (robot.irs().get(3) < robot.irs().get(4) + 1) { // if the robot
+																// faces the
+																// wall
+				// if (angle<Math.PI/3)
+				angle = Math.PI;
 			}
 		}
-		if (robot.irs().get(2)<Constants.minDistanceToWall){ // if a wall is right in front
-			distance=0;
+		if (robot.irs().get(2) < Constants.minDistanceToWall) { // if a wall is
+																// right in
+																// front
+			distance = 0;
 		}
 	}
 
@@ -181,10 +205,11 @@ public class StateMachine implements Runnable {
 		System.out.println(robot.state().toString() + " distance:" + distance
 				+ " angle: " + angle * 180 / Math.PI);
 		robot.update();
-		vision.Timer timer=new vision.Timer(); timer.start();
+		vision.Timer timer = new vision.Timer();
+		timer.start();
 		robot.localization().localize();
 		timer.print("localization ");
-		
+
 		switch (robot.state()) {
 		case GoObject:
 			goObject();
@@ -218,15 +243,13 @@ public class StateMachine implements Runnable {
 	public void run() {
 		System.out.println(robot.state().toString() + " distance:" + distance
 				+ " angle: " + angle * 180 / Math.PI);
-		//update sensors
+		// update sensors
 		robot.update();
-		//move the robot
+		// move the robot
 		robot.move(distance, angle);
-		
-		//start the state machine
-		vision.Timer timer=new vision.Timer(); timer.start();
-		robot.localization().localize();
-		timer.print("localization ");
+
+		// start the state machine
+
 		switch (robot.state()) {
 		case DriveStraight:
 			break;
@@ -259,16 +282,16 @@ public class StateMachine implements Runnable {
 		this.correctMovement();
 
 	}
-	
 
 	public void goObject() {
 		while (robot.localization().getPosition().isClose(path.get(0))) {
 			path.remove(0);
-			if (path.size()==0) break;
+			if (path.size() == 0)
+				break;
 		}
 		if (path.isEmpty()) {
 			robot.setState(State.FaceObject);
-			distance=0;
+			distance = 0;
 		} else {
 			double dist = robot.localization().getPosition()
 					.distance(path.get(0));
@@ -292,7 +315,7 @@ public class StateMachine implements Runnable {
 			robot.setState(State.GoBall);
 			System.out.println(" angle to ball form camera "
 					+ robot.camera().biggestBall().angle());
-			
+
 			stepsAllowedToMissObject = Constants.allowedToMiss;
 		} else if (robot.seesWall()) {
 			robot.setState(State.FollowWall);
@@ -310,21 +333,25 @@ public class StateMachine implements Runnable {
 	 * approaches the ball
 	 */
 	public void goBall() {
-		// take care of false positives and false negatives
-		if (!robot.camera().seesBall()) {
-			updateMissed();
-		} else {
-			double distanceToBall = robot.camera().biggestBall().distance();
-			System.out.println("distance to ball " + distanceToBall);
-			if (distanceToBall < Constants.minDistanceToBall) {
-				this.stepsLeft = Constants.stepsForCatchingBall;
-				robot.setState(State.DriveBlind);
-				distance = Constants.distanceForCatchingBall;
-				angle = 0;
-			} else {
-				distance = distanceToBall;
-				angle = robot.camera().biggestBall().angle();
+		if (cameraWasUpdated) {
+			// take care of false positives and false negatives
+			if (!camera.seesBall()) {
+				updateMissed();
+			} else { //calculate new ball distance
+				distanceToBall = camera.biggestBall().distance()-Constants.minDistanceToBall;
+				System.out.println("distance to ball " + camera.biggestBall().distance());
+				if (distanceToBall < Constants.minDistanceToBall) {
+					this.stepsLeft = Constants.stepsForCatchingBall;
+					robot.setState(State.DriveBlind);
+					distance = Constants.distanceForCatchingBall;
+					angle = 0;
+				} else {
+					distance = distanceToBall;
+					angle = robot.camera().biggestBall().angle();
+				}
 			}
+		} else {
+
 		}
 	}
 
@@ -381,7 +408,7 @@ public class StateMachine implements Runnable {
 				.toPoint2D(), robot.map().currentObject());
 		Ray2D robotDirection = robot.localization().getPosition().toRay2D();
 		angle = Angle2D.angle(robotDirection, objectDirection);
-		angle=Constants.formatAngle(angle);
+		angle = Constants.formatAngle(angle);
 		if (Math.abs(angle) < Math.PI / 120) {
 			switch (goal) {
 			case Silo:
@@ -436,12 +463,14 @@ public class StateMachine implements Runnable {
 
 	public StateMachine(RobotSticky robot) {
 		this.robot = robot;
-		System.out.println(robot.localization().getPosition().x() + " "
-				+ robot.localization().getPosition().y());
-		robot.map().findReactor(robot.localization().getPosition().x(),
-				robot.localization().getPosition().y(), 1);
-		path = robot.map().getPath();
-		path.remove(0);
+
+		// vision initialization
+		oldVisionConsumed = new AtomicBoolean(true);
+		newVisionAvailable = new AtomicBoolean(false);
+		globalDetector = new VisionDetector();
+		Thread visionThread = new Thread(new VisionRunnable(globalDetector,
+				oldVisionConsumed, newVisionAvailable));
+
 	}
 
 	public static void main(String[] args) {
