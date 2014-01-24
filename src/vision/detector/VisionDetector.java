@@ -105,6 +105,7 @@ public class VisionDetector {
 	}
 	
 	public void foundWalls(int[] wallHeight){
+		wallCoordinates=wallHeight;
 		List<Integer> corners=new ArrayList<Integer>();
 		for (int i=3; i<wallHeight.length;i++){
 			if (Math.abs(wallHeight[i]-wallHeight[i-2])<Math.abs(wallHeight[i-1]-wallHeight[i])){

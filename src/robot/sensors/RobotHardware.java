@@ -33,6 +33,7 @@ public class RobotHardware implements RobotEnviroment {
 		motor1 = new Cytron(4, 3);
 		motor2 = new Cytron(5, 6);
 		Ultrasonic ultra;
+		
 		for (int i = 0; i < 5; i++) {
 			switch (i) {
 			case 0:
@@ -47,7 +48,7 @@ public class RobotHardware implements RobotEnviroment {
 				ultrasonics.add(ultra);
 				comm.registerDevice(ultra);
 				break;
-			case 2:
+			/*case 2:
 				ultra = new Ultrasonic(15, 14);
 				ultrasonics.add(ultra);
 				comm.registerDevice(ultra);
@@ -61,10 +62,10 @@ public class RobotHardware implements RobotEnviroment {
 				ultra = new Ultrasonic(19, 29);
 				ultrasonics.add(ultra);
 				comm.registerDevice(ultra);
-				break;*/
-				
+				break;
+				*/
 			}
-
+		
 		}
 		gyro = new Gyroscope(1, 9);
 		encLeft = new Encoder(18, 27);
@@ -145,15 +146,15 @@ public class RobotHardware implements RobotEnviroment {
 	public static void main(String[] args){
 		RobotHardware hardware=new RobotHardware();
 		hardware.update();
-		
-		for (int i=0; i<40; i++){
+		System.out.println("wtf");
+		for (int i=0; i<20; i++){
 			hardware.update();
 			hardware.motor1.setSpeed(i*0.025);
 			hardware.motor2.setSpeed(i*0.025);
 			hardware.comm.transmit();
 			
-			//System.out.println("sonars "+hardware.ultrasonics.get(0).getDistance()+ " "+hardware.ultrasonics.get(1).getDistance()+ " "+hardware.ultrasonics.get(2).getDistance());//+ " "+hardware.ultrasonics.get(3).getDistance()+ " "+hardware.ultrasonics.get(4).getDistance() );
-			//System.out.println("gyro "+hardware.gyro.getAngleChangeSinceLastUpdate());
+			System.out.println("sonars "+hardware.ultrasonics.get(0).getDistance()+ " "+hardware.ultrasonics.get(1).getDistance());//+ " "+hardware.ultrasonics.get(2).getDistance());//+ " "+hardware.ultrasonics.get(3).getDistance()+ " "+hardware.ultrasonics.get(4).getDistance() );
+			System.out.println("gyro "+hardware.gyro.getAngleChangeSinceLastUpdate());
 			System.out.println("left enc "+hardware.encLeft.getDeltaAngularDistance()+" right enc "+hardware.encRight.getDeltaAngularDistance());
 			try {
 				Thread.sleep(500);

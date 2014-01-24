@@ -358,7 +358,7 @@ public class NewImageProcessor {
 		findWallContours(rawImage, imSlave, Color.blue);
 		findWallContours(rawImage, imSlave, Color.yellow);
 		analyzeWalls();
-	//	detector.foundWalls(wallHeight);
+		detector.foundWalls(wallHeight);
 	
 		timer.print("thresholding ");
 		timer.start();
