@@ -369,10 +369,15 @@ public class NewImageProcessor {
 
 		 getColor(rawImage, Color.red); 
 		 getColor(rawImage, Color.green);		 
+
+
+		 getColor(rawImage, Color.green);
+
 		 if (log) {
 				Highgui.imwrite("resources/red" + testnumber + ".jpg", imRed);
 				Highgui.imwrite("resources/green" + testnumber + ".jpg", imGreen);
 			}
+
 		 // find and analyze contours for red
 		Contour[] contours = findTwoLargestContours(imRed, imSlave);
 		analyzeContours(contours, Color.red, detector);
