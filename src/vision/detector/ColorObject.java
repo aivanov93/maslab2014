@@ -5,7 +5,7 @@ import java.awt.Color;
 public class ColorObject {
 
 	public static enum Type {
-		RedBall, GreenBall, Silo, Reactor, YellowWall
+		RedBall, GreenBall, Silo, Reactor, YellowWall, LeftWall, RightWall, CenterWall,
 	};
 
 	private double distance;

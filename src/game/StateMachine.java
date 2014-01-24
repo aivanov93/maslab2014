@@ -40,6 +40,10 @@ public class StateMachine implements Runnable {
 		Silo, Reactor
 	}
 
+	public static enum WallSide {
+		Left, Right, Undecided
+	}
+
 	private int i = 0;
 
 	private RobotSticky robot;
@@ -86,6 +90,12 @@ public class StateMachine implements Runnable {
 	 */
 	private int stepsAllowedToMissObject = 0;
 
+	/**
+	 * wall following
+	 */
+	private WallSide side=WallSide.Undecided;
+	
+	
 	private double distanceToBall;
 	private double angleToBall;
 
@@ -306,27 +316,35 @@ public class StateMachine implements Runnable {
 	 * Looks around to see anything new
 	 */
 	public void lookAround() {
-		angleToTurn -= robot.odometry().angleMoved();
-
-		if (robot.camera().seesSilo() && !siloDone) {
-			robot.setState(State.GoSilo);
-			stepsAllowedToMissObject = Constants.allowedToMiss;
-		} else if (robot.camera().seesBall()) {
-			robot.setState(State.GoBall);
-			System.out.println(" angle to ball form camera "
-					+ robot.camera().biggestBall().angle());
-
-			stepsAllowedToMissObject = Constants.allowedToMiss;
-		} else if (robot.seesWall()) {
-			robot.setState(State.FollowWall);
+		angle -= robot.odometry().angleMoved();
+		if (cameraWasUpdated) {
+			/*
+			 * if (robot.camera().seesSilo() && !siloDone) {
+			 * robot.setState(State.GoSilo); stepsAllowedToMissObject =
+			 * Constants.allowedToMiss; } else
+			 */
+			if (robot.camera().seesBall()) {
+				robot.setState(State.GoBall);
+				System.out.println(" angle to ball form camera "
+						+ robot.camera().biggestBall().angle());
+				stepsAllowedToMissObject = Constants.allowedToMiss;
+			}
 		} else if (Math.abs(angleToTurn) < 0.01) {
 			robot.setState(State.GoForward);
 		}
 
 		// set the required speeds
 		distance = 0;
-		angle = angleToTurn;
+		
 
+	}
+
+	public void goForward() {
+		angle = 0.0;
+		distance = 50;
+		if (robot.seesWall()) {
+			robot.setState(State.FollowWall);
+		}
 	}
 
 	/**
@@ -337,9 +355,11 @@ public class StateMachine implements Runnable {
 			// take care of false positives and false negatives
 			if (!camera.seesBall()) {
 				updateMissed();
-			} else { //calculate new ball distance
-				distanceToBall = camera.biggestBall().distance()-Constants.minDistanceToBall;
-				System.out.println("distance to ball " + camera.biggestBall().distance());
+			} else { // calculate new ball distance
+				distanceToBall = camera.biggestBall().distance()
+						- Constants.minDistanceToBall;
+				System.out.println("distance to ball "
+						+ camera.biggestBall().distance());
 				if (distanceToBall < Constants.minDistanceToBall) {
 					this.stepsLeft = Constants.stepsForCatchingBall;
 					robot.setState(State.DriveBlind);
@@ -455,9 +475,18 @@ public class StateMachine implements Runnable {
 	}
 
 	public void followWall() {
-		if (robot.camera().seesBall()) {
-			ColorObject ball = robot.camera().biggestBall();
-
+		angle-=robot.odometry().angleMoved();
+		if (cameraWasUpdated ) {
+			switch(side){
+			case Left:
+				if (!camera.seesWallLeft()){
+					angle=-Math.PI/2;
+					side=WallSide.Undecided;
+				} else {
+					
+				}
+			}
+			if (camera.seesBall()) robot.setState(State.GoBall);
 		}
 	}
 
