@@ -41,19 +41,19 @@ public class LinearizingTool extends JFrame implements MouseListener, ItemListen
 	public LinearizingTool() {
 		super();
 		try {
-			image = ImageIO.read(new File("resources/field/wall.png"));
+			image = ImageIO.read(new File("resources/field/walls.png"));
 		} catch (IOException ex) {
 
 		}
 		JLabel label = new JLabel(new ImageIcon(image));
 		frame = new JPanel();
-		frame.setPreferredSize(new Dimension(320, 240));
+		frame.setPreferredSize(new Dimension(640, 480));
 		JButton doneButton=new JButton("done");
 		doneButton.addActionListener(this);
 		useOld = new JCheckBox("Use previously selected x");
 		useOld.setSelected(false);
 		useOld.addItemListener(this);
-		this.setSize(new Dimension(330, 350));
+		this.setSize(new Dimension(650, 650));
 		frame.add(useOld);
 		frame.add(label);
 		frame.add(doneButton);
@@ -95,18 +95,19 @@ public class LinearizingTool extends JFrame implements MouseListener, ItemListen
 		ObjectInputStream ss = new ObjectInputStream(ff);
 		HashMap<Point, Double> xpn = (HashMap<Point, Double>) ss
 				.readObject();
-		ss.close();
+		
 		HashMap<Point, Double> ypn = (HashMap<Point, Double>) ss
 				.readObject();
+		ss.close();
 		System.out.println(xpn);
 		for (Point point:xpn.keySet()){
-			System.out.println("{"+point.x+", "+point.y+", "+xpn.get(point)+"}, ");
+			System.out.print("{"+point.x+", "+point.y+", "+xpn.get(point)+"}, ");
 		}
-		System.out.println("\r\n");
+		System.out.println();
 		for (Point point:ypn.keySet()){
-			System.out.println("{"+point.x+", "+point.y+", "+ypn.get(point)+"}, ");
+			System.out.print("{"+point.x+", "+point.y+", "+ypn.get(point)+"}, ");
 		}
-		System.out.println("\r\n");
+		System.out.println();
 	}
 
 	public static void main(String[] args) throws IOException,
@@ -144,13 +145,11 @@ public class LinearizingTool extends JFrame implements MouseListener, ItemListen
 	
 	@Override
 	public void mouseReleased(MouseEvent e) {
-		System.out.println(e.getX() + " " + e.getY());
 		if (!usingOldX) {
 			String s = (String) JOptionPane.showInputDialog(frame,
 					"Real Distance:\n" + "\"X and Y\"",
 					"Customized Dialog", JOptionPane.PLAIN_MESSAGE, null, null,
-					"ham");
-			System.out.println(s);
+					"ham");			
 			// If a string was returned, say so.
 			if ((s != null) && (s.length() > 0)) {
 				String[] xandy=s.split(" ");
@@ -159,6 +158,7 @@ public class LinearizingTool extends JFrame implements MouseListener, ItemListen
 				} else {
 					oldX=Double.parseDouble(xandy[0]);
 					oldY=Double.parseDouble(xandy[1]);
+					System.out.println(oldX+ " "+oldY);
 					xp.put(new Point(e.getX(), e.getY()), oldX);
 					yp.put(new Point(e.getX(), e.getY()), oldY);					
 				}
@@ -167,11 +167,12 @@ public class LinearizingTool extends JFrame implements MouseListener, ItemListen
 			//default icon, custom title
 			int n = JOptionPane.showConfirmDialog(
 			    frame,
-			    "Uveren?",
+			    "Sure?",
 			    "Ne tupi",
 			    JOptionPane.YES_NO_OPTION);
 			if (n==0){
 				oldY+=2;
+				System.out.println(oldX+ " "+oldY);
 				xp.put(new Point(e.getX(), e.getY()), oldX);
 				yp.put(new Point(e.getX(), e.getY()), oldY);
 				
