@@ -73,5 +73,10 @@ public class Constants {
 		return angle;
 	}
 	
+	/**
+	 * vision related constants
+	 */
+	
+	public static int picWidth=640;
 	
 }

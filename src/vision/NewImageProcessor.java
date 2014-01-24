@@ -29,11 +29,11 @@ import vision.detector.VisionDetector;
 
 public class NewImageProcessor {
 
-	private static Scalar redLeft1 = new Scalar(170, 160, 100);
+	private static Scalar redLeft1 = new Scalar(170, 110, 100);
 	private static Scalar redRight1 = new Scalar(180, 256, 230);
 
-	private static Scalar redLeft2 = new Scalar(0, 160, 100);
-	private static Scalar redRight2 = new Scalar(8, 256, 230);
+	private static Scalar redLeft2 = new Scalar(0, 110, 100);
+	private static Scalar redRight2 = new Scalar(10, 256, 230);
 
 	private static Scalar greenLeft = new Scalar(43, 100, 50);
 	private static Scalar greenRight = new Scalar(90, 256, 230);
@@ -284,8 +284,12 @@ public class NewImageProcessor {
 		boolean sawBall = false;
 
 		for (int i = 0; i < contours.length; i++) {
-			contours[i].printPr();
-
+			if (wallHeight[(int)contours[i].center().y]<contours[i].center().x && contours[i].area()>30){
+				detector.sawBall(color, contours[i].center().x,
+						contours[i].center().y);
+				System.out.println("sawBall");
+			}
+			/*
 			if (contours[i].isRect() && !sawLabel) {
 				detector.sawRectangle(color, contours[i].center().x,
 						contours[i].center().y);
@@ -303,7 +307,7 @@ public class NewImageProcessor {
 				System.out.println("sawBall " + color.toString());
 				sawBall = true;
 			}
-
+			*/	
 			if (log) {
 				contours[i].drawR(imSlave);
 				byte[] data = { (byte) 255, (byte) 0, (byte) 0 };
@@ -343,25 +347,13 @@ public class NewImageProcessor {
 		blur(rawImage);
 		
 		Imgproc.cvtColor(rawImage, rawImage, Imgproc.COLOR_BGR2HSV);
-		if (log) {
-			Highgui.imwrite("resources/edges" + testnumber + ".jpg", rawImage);
-		}
+		
 		timer.print("HSV conversion ");
 		timer.start();
 
-		// extract thresholded colors
-
-		 getColor(rawImage, Color.red); 
-		 getColor(rawImage, Color.green);		 
-
-		 getColor(rawImage, Color.green);
-		 // find and analyze contours for red
-		Contour[] contours = findTwoLargestContours(imRed, imSlave);
-		analyzeContours(contours, Color.red, detector);
-
-		// find and analyze contours for green
-		contours = findTwoLargestContours(imGreen, imSlave);
-		analyzeContours(contours, Color.green, detector);
+		// ***********************
+		// *****wall contours*****
+		//************************
 		 
 		findWallContours(rawImage, imSlave, Color.blue);
 		findWallContours(rawImage, imSlave, Color.yellow);
@@ -370,7 +362,30 @@ public class NewImageProcessor {
 	
 		timer.print("thresholding ");
 		timer.start();
+		
+		// ********************************
+		// *******balls********************
+		// *******************************
 
+		 getColor(rawImage, Color.red); 
+		 getColor(rawImage, Color.green);		 
+
+
+		 getColor(rawImage, Color.green);
+
+		 if (log) {
+				Highgui.imwrite("resources/red" + testnumber + ".jpg", imRed);
+				Highgui.imwrite("resources/green" + testnumber + ".jpg", imGreen);
+			}
+
+		 // find and analyze contours for red
+		Contour[] contours = findTwoLargestContours(imRed, imSlave);
+		analyzeContours(contours, Color.red, detector);
+
+		// find and analyze contours for green
+		contours = findTwoLargestContours(imGreen, imSlave);
+		analyzeContours(contours, Color.green, detector);
+		
 		if (log) {
 			Highgui.imwrite("resources/filtered" + testnumber + ".jpg", imRed);
 			// Highgui.imwrite("resources/greenfiltered" + testnumber + ".png",
@@ -387,7 +402,7 @@ public class NewImageProcessor {
 
 
 	public static void main(String[] args) {
-		Mat im = Highgui.imread("resources/field/image5.png");
+		Mat im = Highgui.imread("resources/field/image3.png");
 		System.out.println(im.size().height);
 		NewImageProcessor proc = new NewImageProcessor(false, 1);
 		VisionDetector detector = new VisionDetector();
