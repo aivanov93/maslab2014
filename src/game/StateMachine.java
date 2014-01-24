@@ -93,9 +93,8 @@ public class StateMachine implements Runnable {
 	/**
 	 * wall following
 	 */
-	private WallSide side=WallSide.Undecided;
-	
-	
+	private WallSide side = WallSide.Undecided;
+
 	private double distanceToBall;
 	private double angleToBall;
 
@@ -335,7 +334,6 @@ public class StateMachine implements Runnable {
 
 		// set the required speeds
 		distance = 0;
-		
 
 	}
 
@@ -475,18 +473,37 @@ public class StateMachine implements Runnable {
 	}
 
 	public void followWall() {
-		angle-=robot.odometry().angleMoved();
-		if (cameraWasUpdated ) {
-			switch(side){
+		angle -= robot.odometry().angleMoved();
+		if (cameraWasUpdated) {
+			switch (side) {
 			case Left:
-				if (!camera.seesWallLeft()){
-					angle=-Math.PI/2;
-					side=WallSide.Undecided;
+				if (!camera.seesWallLeft()) {
+					angle = Math.PI / 2;
+					side = WallSide.Undecided;
 				} else {
-					
+					angle = camera.leftWall().angle();
+				}
+				break;
+			case Right:
+				if (!camera.seesWallRight()) {
+					angle = -Math.PI / 2;
+					side = WallSide.Undecided;
+				} else {
+					angle = camera.rightWall().angle();
+				}
+				break;
+			case Undecided:
+				if (camera.seesWallLeft()){
+					if (camera.leftWall().di)
 				}
 			}
-			if (camera.seesBall()) robot.setState(State.GoBall);
+			if (camera.seesWallCenter()) { // if there is a wall in center
+				if (camera.centerWall().distance() < 20) { // if its close
+					angle = -camera.centerWall().angle(); // turn towards it
+				}
+			}
+			if (camera.seesBall())
+				robot.setState(State.GoBall);
 		}
 	}
 

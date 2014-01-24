@@ -145,6 +145,7 @@ public class LinearizingTool extends JFrame implements MouseListener, ItemListen
 	
 	@Override
 	public void mouseReleased(MouseEvent e) {
+		System.out.println(e.getX()+" "+ e.getY());
 		if (!usingOldX) {
 			String s = (String) JOptionPane.showInputDialog(frame,
 					"Real Distance:\n" + "\"X and Y\"",
