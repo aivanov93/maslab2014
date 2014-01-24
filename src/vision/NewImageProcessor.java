@@ -48,7 +48,7 @@ public class NewImageProcessor {
 	private static Scalar whiteRight = new Scalar(180, 60, 256);
 	
 	private static double minimalArea = 50;
-	private static Size picSize = new Size(320, 240);
+	private static Size picSize = new Size(640, 480);
 	Mat hierarchy, edges;
 	Mat imSlave, imRed, imGreen, imT2;// ,imT;
 	List<MatOfPoint> contours;
@@ -353,7 +353,8 @@ public class NewImageProcessor {
 
 		 getColor(rawImage, Color.red); 
 		 getColor(rawImage, Color.green);		 
-		 
+
+		 getColor(rawImage, Color.green);
 		 // find and analyze contours for red
 		Contour[] contours = findTwoLargestContours(imRed, imSlave);
 		analyzeContours(contours, Color.red, detector);
