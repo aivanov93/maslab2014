@@ -11,21 +11,21 @@ public class Constants {
 	/**
 	 * Time constants
 	 */
-	public static int clock=100; // ms
-	public static int totalTime=30; //s
+	public static int clock=30; // ms
+	public static int totalTime=180; //s
 	
 	/**
 	 * Robot size related constants
 	 */
 	public static double robotRadius=20.32;
 
-	public static double wheelBase=20.32;
+	public static double wheelBase=34.29;
 	public static double wheelRadius=4.92125;
 	
 	/**
 	 * sensor related constants
 	 */
-	public static int numberOfIRs=5;
+	public static int numberOfIRs=2;
 	public static List<Double> irDirections=Arrays.asList(Math.PI/2, Math.PI/3, 0.0, -Math.PI/3, -Math.PI/2);//, -Math.PI*3/4, -Math.PI, Math.PI*3/4);
 	public static double minIRreading=3;
 	public static double maxIRreading=100;

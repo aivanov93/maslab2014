@@ -1,5 +1,7 @@
 package maple.devices.sensors;
 
+import global.Constants;
+
 import java.nio.ByteBuffer;
 
 import maple.devices.Sensor;
@@ -54,7 +56,7 @@ public class Gyroscope extends Sensor {
 	}
 	
 	public double getAngleChangeSinceLastUpdate() {
-			return getOmega()*0.1;
+			return getOmega()*1.0/Constants.clock;
 	}
 
 }

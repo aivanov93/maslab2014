@@ -30,7 +30,7 @@ public class VisionRunnable implements Runnable {
 		// Setup the camera
 		VideoCapture camera = new VideoCapture();
 		camera.open(1);
-		NewImageProcessor processor = new NewImageProcessor(true, 2);
+		NewImageProcessor processor = new NewImageProcessor(false, false, 2);
 		// detector.
 		// Main loop
 		Mat rawImage = new Mat();

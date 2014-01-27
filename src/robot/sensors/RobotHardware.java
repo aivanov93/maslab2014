@@ -12,6 +12,7 @@ import maple.devices.sensors.Gyroscope;
 import maple.devices.sensors.Infrared;
 import maple.devices.sensors.Ultrasonic;
 
+import game.Logger;
 import game.StateMachine.State;
 import global.Constants;
 import vision.detector.VisionDetector;
@@ -21,10 +22,11 @@ public class RobotHardware implements RobotEnviroment {
 
 	MapleComm comm;
 	public Cytron motor1, motor2;
-	public List<Ultrasonic> ultrasonics=new ArrayList<Ultrasonic>();
+	Ultrasonic ultraL, ultraR;
 	public Encoder encLeft, encRight;
 	public Gyroscope gyro;
-
+	public SensInfo data = new SensInfo();
+	Logger logger=new Logger();
 	/**
 	 * Initializes all the required robot's part
 	 */
@@ -32,41 +34,13 @@ public class RobotHardware implements RobotEnviroment {
 		comm = new MapleComm(MapleIO.SerialPortType.LINUX);
 		motor1 = new Cytron(4, 3);
 		motor2 = new Cytron(5, 6);
-		Ultrasonic ultra;
-		
-		for (int i = 0; i < 5; i++) {
-			switch (i) {
-			case 0:
-				ultra = new Ultrasonic(16,24);
-				System.out.println(ultra);
-				ultrasonics.add(ultra);
-				comm.registerDevice(ultra);
-				break;
-				
-			case 1:
-				ultra = new Ultrasonic(17,25);
-				ultrasonics.add(ultra);
-				comm.registerDevice(ultra);
-				break;
-			/*case 2:
-				ultra = new Ultrasonic(15, 14);
-				ultrasonics.add(ultra);
-				comm.registerDevice(ultra);
-				break;
-			/*case 3:
-				ultra = new Ultrasonic(18,26);
-				ultrasonics.add(ultra);
-				comm.registerDevice(ultra);
-				break;
-			case 4:
-				ultra = new Ultrasonic(19, 29);
-				ultrasonics.add(ultra);
-				comm.registerDevice(ultra);
-				break;
-				*/
-			}
-		
-		}
+
+		ultraL = new Ultrasonic(16, 24);
+		comm.registerDevice(ultraL);
+
+		ultraR = new Ultrasonic(17, 25);
+		comm.registerDevice(ultraR);
+
 		gyro = new Gyroscope(1, 9);
 		encLeft = new Encoder(18, 27);
 		encRight = new Encoder(19, 29);
@@ -76,18 +50,22 @@ public class RobotHardware implements RobotEnviroment {
 		comm.registerDevice(gyro);
 		comm.registerDevice(encLeft);
 		comm.registerDevice(encRight);
+
 		comm.initialize();
+
+		Thread odoThread = new Thread(new SensorsRunnable(data, comm, gyro,
+				encLeft, encRight, ultraL, ultraR));
+		odoThread.start();
+
 	}
 
 	public void update() {
-		comm.updateSensorData();
+		// comm.updateSensorData();
 	}
 
 	public void updateReadings(RangeSensors range) {
-		for (int i = 0; i < Constants.numberOfIRs; i++) {
-			range.set(i, ultrasonics.get(i).getDistance());
-		}
-		
+		range.set(0, data.ultraL());
+		range.set(1, data.ultraR());
 	}
 
 	public void updateCamera(VisionDetector detector) {
@@ -107,8 +85,16 @@ public class RobotHardware implements RobotEnviroment {
 	}
 
 	public void move(double speed, double angularSpeed) {
-		motor1.setSpeed(speed + angularSpeed);
-		motor2.setSpeed(speed - angularSpeed);
+		logger.step();
+		double speed1=speed-angularSpeed;
+		double speed2=speed+angularSpeed;
+		if (Math.abs(speed1)>0.0001)	speed1+=(Math.signum(speed1)*0.105);
+		else speed1=0;
+		if (Math.abs(speed2)>0.0001) speed2+=(Math.signum(speed2)*0.105);
+		else speed2=0;
+		motor1.setSpeed(speed1);
+		motor2.setSpeed(speed2);
+		logger.log("speeds "+(speed - angularSpeed)+" "+(speed + angularSpeed));
 		comm.transmit();
 	}
 
@@ -129,12 +115,8 @@ public class RobotHardware implements RobotEnviroment {
 
 	@Override
 	public void updateOdometry(Odometry odometry) {
-		double dl = encLeft.getDeltaAngularDistance() * Constants.wheelRadius;
-		double dr = encRight.getDeltaAngularDistance();
-		double dtotal = (dl + dr) / 2;
-		double theta = (dr - dl) / Constants.wheelBase;
-		odometry.set(dtotal * Math.sin(theta), dtotal * Math.cos(theta),
-				gyro.getAngleChangeSinceLastUpdate());
+		Odometry odom = data.getAndReset();
+		odometry.set(odom.xMoved(), odom.yMoved(), odom.angleMoved());
 	}
 
 	@Override
@@ -142,31 +124,32 @@ public class RobotHardware implements RobotEnviroment {
 		// TODO Auto-generated method stub
 
 	}
-	
-	public static void main(String[] args){
-		RobotHardware hardware=new RobotHardware();
-		hardware.update();
+
+	public static void main(String[] args) throws InterruptedException {
+		RobotHardware hardware = new RobotHardware();
+		// hardware.update();
 		System.out.println("wtf");
-		for (int i=0; i<20; i++){
-			hardware.update();
-			hardware.motor1.setSpeed(i*0.025);
-			hardware.motor2.setSpeed(i*0.025);
-			hardware.comm.transmit();
-			
-			System.out.println("sonars "+hardware.ultrasonics.get(0).getDistance()+ " "+hardware.ultrasonics.get(1).getDistance());//+ " "+hardware.ultrasonics.get(2).getDistance());//+ " "+hardware.ultrasonics.get(3).getDistance()+ " "+hardware.ultrasonics.get(4).getDistance() );
-			System.out.println("gyro "+hardware.gyro.getAngleChangeSinceLastUpdate());
-			System.out.println("left enc "+hardware.encLeft.getDeltaAngularDistance()+" right enc "+hardware.encRight.getDeltaAngularDistance());
-			try {
-				Thread.sleep(500);
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
-		}
-	
+		hardware.motor1.setSpeed(0.11);
+		hardware.motor2.setSpeed(0.11);
+		hardware.comm.transmit();
+
+		Thread.sleep(3000);
+		
 		hardware.motor1.setSpeed(0);
 		hardware.motor2.setSpeed(0);
 		hardware.comm.transmit();
 		
+		System.out.println(hardware.data.getAndReset().angleMoved()*180/Math.PI);
+		
+		for (int i = 0; i < 50; i++) {
+			System.out.println(hardware.data.ultraL()+" "+hardware.data.ultraR());
+			Thread.sleep(100);
+		}
+
+		hardware.motor1.setSpeed(0);
+		hardware.motor2.setSpeed(0);
+		hardware.comm.transmit();
+
 	}
 
 }

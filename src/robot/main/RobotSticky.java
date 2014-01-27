@@ -3,7 +3,7 @@ package robot.main;
 
 import game.StateMachine.State;
 
-import fakerobot.MapGUI;
+import fakerobot.RobotGUIMap;
 import fakerobot.RobotSimulator;
 import fakerobot.SampleMaps;
 import global.Constants;
@@ -19,6 +19,7 @@ import robot.sensors.RangeSensors;
 import robot.sensors.Odometry;
 import robot.sensors.RobotEnviroment;
 import robot.sensors.RobotHardware;
+import vision.NewImageProcessor;
 import vision.detector.VisionDetector;
 
 public class RobotSticky implements Robot {
@@ -35,15 +36,10 @@ public class RobotSticky implements Robot {
 	/**
 	 * keeps all the readings from the camera
 	 */
-	private VisionDetector camera;
 	
-	private Localization localization;
 	
-	private MapForSensors mapForSensors;
 	
-	private MazeMap mazeMap;
-	
-	private Odometry odometry;
+	private Odometry odometry=new Odometry(0, 0, 0);
 
 	/**
 	 * flag to know whether it's a simulation or no
@@ -55,7 +51,7 @@ public class RobotSticky implements Robot {
 	 */
 	private State state;
 	
-	private MapGUI gui;
+
 	
 	private RangeSensors irs = new RangeSensors(Constants.numberOfIRs);
 
@@ -74,26 +70,23 @@ public class RobotSticky implements Robot {
 		}
 		Position startPosition=BotClientMap.getDefaultMap().getPosition();
 		this.odometry=new Odometry(0, 0, 0);
-		this.mapForSensors=SampleMapsLocalization.mapForSensors2(irs);
-		this.localization=new Localization(startPosition.x(), startPosition.y(), startPosition.angle(), mapForSensors);
+	//	this.mapForSensors=SampleMapsLocalization.mapForSensors2(irs);
+	//	this.localization=new Localization(startPosition.x(), startPosition.y(), startPosition.angle(), mapForSensors);
 	
-		localization.setOdometry(odometry);
-		this.mazeMap=SampleMapsLocalization.mazeMap2();
-		
-		gui = new MapGUI(hardware, localization,mazeMap);
-		
+		//localization.setOdometry(odometry);
+		//this.mazeMap=SampleMapsLocalization.mazeMap2();
+	
+	
 		// initialize sensors, driver and camera
-		this.driver = new Driver(0.2, 0.0, 0.05, 0.6, 0.0, 0.05);
-		this.camera = new VisionDetector();
+		this.driver = new Driver(0.002, 0.0, 0.4, 0.15, 0.0,6);
+		//this.camera = new VisionDetector();
 	}
 
 	/* **********************************************
 	 * ****** getters for main robot modules ********
 	 * *********************************************/
 	
-	public VisionDetector camera() {
-		return camera;
-	}
+	
 
 	public RobotEnviroment hardware(){
 		return hardware;
@@ -107,29 +100,26 @@ public class RobotSticky implements Robot {
 		return odometry;
 	}
 	
-	public Localization localization(){
-		return localization;
-	}
-	
-	public MazeMap map(){
-		return mazeMap;
-	}
+
 	
 	/**
 	 * updates sensor readings
 	 */
 	public void update() {
+		hardware.update();
 		hardware.updateReadings(irs);
-		hardware.updateCamera(camera);
 		hardware.updateOdometry(odometry);
-		gui.update();
 	
 	}
 	
-	
+	public void stop(){
+		hardware.move(0, 0);
+	}
 	
 
 	public void move( double distance, double angle) {
+		if (Math.abs(distance)<1) distance=0;
+		if (Math.abs(angle)<Math.PI/50) angle=0;
 		double forwardSpeed=driver.moveForward(distance);
 		double angularSpeed=driver.rotate(angle);		
 		hardware.move(forwardSpeed, angularSpeed);

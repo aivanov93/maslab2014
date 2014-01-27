@@ -4,11 +4,12 @@ import java.util.List;
 
 import math.geom2d.Point2D;
 import math.geom2d.line.Line2D;
+import math.geom2d.line.StraightLine2D;
 
 
 public class LeastSquares { 
 
-    public static Line2D fitLine(List<Point2D> points) {   
+    public static StraightLine2D fitLine(List<Point2D> points) {   
         
 
         // first pass: read in data, compute xbar and ybar
@@ -32,7 +33,7 @@ public class LeastSquares {
         double beta0 = ybar - beta1 * xbar;
         Point2D one=new Point2D(1, beta1+beta0);
         Point2D two=new Point2D(2, 2*beta1+beta0);
-        return new Line2D(one, two);
+        return new StraightLine2D(one, two);
         
     }
 }

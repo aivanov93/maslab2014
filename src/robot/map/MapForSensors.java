@@ -2,6 +2,9 @@ package robot.map;
 
 import global.Constants;
 
+import java.awt.BasicStroke;
+import java.awt.Color;
+import java.awt.Graphics2D;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -115,6 +118,15 @@ public class MapForSensors {
 		if (uncertainty>3) probability=0.000;
 		return probability;
 
+	}
+	
+	public void draw(Graphics2D g){
+
+		g.setStroke(new BasicStroke(3));
+		g.setColor(Color.black);
+		for (LineSegment2D wall:walls){
+			wall.draw(g);
+		}
 	}
 
 }

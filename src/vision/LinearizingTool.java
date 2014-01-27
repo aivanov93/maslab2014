@@ -41,7 +41,7 @@ public class LinearizingTool extends JFrame implements MouseListener, ItemListen
 	public LinearizingTool() {
 		super();
 		try {
-			image = ImageIO.read(new File("resources/field/walls.png"));
+			image = ImageIO.read(new File("resources/field/floor.png"));
 		} catch (IOException ex) {
 
 		}
@@ -84,7 +84,7 @@ public class LinearizingTool extends JFrame implements MouseListener, ItemListen
 	}
 	
 	public void save() throws IOException, ClassNotFoundException{
-		File file = new File("resources/field/cameratop");
+		File file = new File("resources/field/camerabot");
 		FileOutputStream f = new FileOutputStream(file);
 		ObjectOutputStream s = new ObjectOutputStream(f);
 		s.writeObject(xp);
@@ -172,7 +172,7 @@ public class LinearizingTool extends JFrame implements MouseListener, ItemListen
 			    "Ne tupi",
 			    JOptionPane.YES_NO_OPTION);
 			if (n==0){
-				oldY+=2;
+				oldY+=4;
 				System.out.println(oldX+ " "+oldY);
 				xp.put(new Point(e.getX(), e.getY()), oldX);
 				yp.put(new Point(e.getX(), e.getY()), oldY);

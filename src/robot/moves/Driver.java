@@ -15,11 +15,11 @@ public class Driver {
 	}
 
 	public double moveForward(double distance) {
-		return Math.max(Math.min(speedController.next(distance), 1.0),-1.0);
+		return Math.max(Math.min(speedController.next(distance), 0.25),-0.25);
 
 	}
 
 	public double rotate(double angle) {
-		return Math.max(Math.min(angularSpeedController.next(angle), 1.0),-1);
+		return Math.max(Math.min(angularSpeedController.next(angle), 0.2),-0.2);
 	}
 }
