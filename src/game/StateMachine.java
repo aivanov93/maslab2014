@@ -82,6 +82,8 @@ public class StateMachine implements Runnable {
 	 * tells whether there are still balls in silo
 	 */
 	private boolean siloHasBalls = true;
+	
+	private boolean hadWallInFront=false;
 
 	/**
 	 * used to count tries of collecting from the silo
@@ -229,12 +231,14 @@ public class StateMachine implements Runnable {
 			ysMoved.remove(0);
 			double sumx = 0, sumy = 0;
 			for (int i = 0; i < xsMoved.size(); i++) {
-				sumx += xsMoved.get(i);
+				sumx += Math.sqrt(xsMoved.get(i)*xsMoved.get(i)+ysMoved.get(i)*ysMoved.get(i));
 				sumy += ysMoved.get(i);
 			}
-			if (Math.sqrt(sumx * sumx + sumy * sumy) < 3) {
+			if (sumx  < 8) {
 				timedOutState = robot.state();
-				counters.setStepsCounter(20);
+				xsMoved.clear();
+				ysMoved.clear();
+				counters.setStepsCounter(60);
 				robot.setState(State.TimedOut);
 			}
 		}
@@ -318,7 +322,7 @@ public class StateMachine implements Runnable {
 			// camera.biggestBall().distance(), camera.biggestBall().angle());
 
 		}
-		if (camera != null) {
+		if (1 == 0) {
 			log.log("wall leftttttttttt dx" + camera.leftWall().x() + " dy "
 					+ camera.leftWall().y() + " dist "
 					+ camera.leftWall().distance() + " angle "
@@ -435,13 +439,12 @@ public class StateMachine implements Runnable {
 	public void timedOut() {
 		counters.stepped();
 		if (counters.done()) {
-			xsMoved.clear();
-			ysMoved.clear();
 			robot.setState(State.FollowWall);
 		} else {
-			angle = 0;
-			distance = -10;
+			angle = -Math.PI/4;
+			distance = -50;
 		}
+		checkDistanceTimeout();
 	}
 
 	public void goForward() {
@@ -496,7 +499,11 @@ public class StateMachine implements Runnable {
 		if (distance < Constants.minDistanceToBall) {
 			// System.out.println("ANGLE??????+" + angle);
 			if (Math.abs(angle) < Math.PI / 3) {
-
+				if (camera.seesWallCenter()){
+					if (camera.centerWall().distance()<12){
+						hadWallInFront=true;
+					}
+				}
 				// System.out.println("  clooooooooooose");
 				System.out
 						.println("((((((((((((((distance to ball " + distance);
@@ -520,10 +527,12 @@ public class StateMachine implements Runnable {
 			angle = Math.PI;
 			dx = 0;
 			dy = 0;
-			distance = 0;
-			robot.setState(State.FollowWall);
+			distance = -30;
+			robot.setState(State.TimedOut);
 			robot.driverReset();
 		}
+
+		checkDistanceTimeout();
 	}
 
 	public void driveStraight() {
@@ -665,49 +674,54 @@ public class StateMachine implements Runnable {
 				if (!camera.seesWallLeft()) {
 					side = WallSide.Undecided;
 				} else {
-					/*
-					 * if ((!camera.leftWall().onLeft() || Math.abs(camera
-					 * .leftWall().angle()) > Math.PI / 2.3) ) {
-					 * System.out.println("freeeee left"); if
-					 * (Math.abs(distance) < 5) { angle = Math.PI / 3; distance
-					 * = 5; robot.setState(State.FreeLeft); } } else {
-					 */
-					camera.leftWall().makeCarrot(30, 30);
-					double newangle = camera.leftWall().carrotAngle();
-					double newdx = camera.leftWall().x();
-					double newdy = camera.leftWall().y();
-					calculateDistance();
-					log.log("new distance " + distance + " " + angle);
 
-					if (camera.seesWallCenter()) {
-						if (camera.centerWall().distance() < 30
-								&& Math.abs(camera.centerWall().angle()) > Math.PI / 4) {
-							log.loga("correcting for center");
-							camera.centerWall().makeCarrot(30, 30);
-							newangle = camera.centerWall().carrotAngle();
-							newdx = camera.centerWall().x();
-							newdy = camera.centerWall().y();
-							calculateDistance();
-							System.out.println("on left"
-									+ camera.centerWall().onLeft());
-
+					if ((!camera.leftWall().onLeft() || Math.abs(camera
+							.leftWall().angle()) > Math.PI / 2.3)) {
+						System.out.println("freeeee left");
+						if (Math.abs(distance) < 5) {
+							angle = Math.PI / 3;
+							distance = 5;
+							robot.setState(State.FreeLeft);
 						}
+					} else {
+
+						camera.leftWall().makeCarrot(30, 25);
+						double newangle = camera.leftWall().carrotAngle();
+						double newdx = camera.leftWall().x();
+						double newdy = camera.leftWall().y();
+						calculateDistance();
+						log.log("new distance " + distance + " " + angle);
+
+						if (camera.seesWallCenter()) {
+							if (camera.centerWall().distance() < 30
+									&& Math.abs(camera.centerWall().angle()) > Math.PI / 4) {
+								log.loga("correcting for center");
+								camera.centerWall().makeCarrot(30, 25);
+								newangle = camera.centerWall().carrotAngle();
+								newdx = camera.centerWall().x();
+								newdy = camera.centerWall().y();
+								calculateDistance();
+//								System.out.println("on left"
+//										+ camera.centerWall().onLeft());
+
+							}
+						}
+
+						double ratio = 0.5;
+						dx = dx * ratio + newdx * (1 - ratio);
+						dy = dy * ratio + newdy * (1 - ratio);
+						angle = angle * ratio + (1 - ratio) * newangle;
+
+						wgui.setCarrot(new Point2D(dx, dy));
+						log.log("cameraaaaaaaaaaaa" + dx + " " + dy + " "
+								+ angle);
+						distance *= (Math.cos(angle) * Math.cos(angle));
+
 					}
-
-					double ratio = 0.5;
-					dx = dx * ratio + newdx * (1 - ratio);
-					dy = dy * ratio + newdy * (1 - ratio);
-					angle = angle * ratio + (1 - ratio) * newangle;
-
-					wgui.setCarrot(new Point2D(dx, dy));
-					log.log("cameraaaaaaaaaaaa" + dx + " " + dy + " " + angle);
-					distance *= (Math.cos(angle) * Math.cos(angle));
-
-					// }
 					// robot.driverReset();
 				}
 			}
-			checkDistanceTimeout();
+
 			break;
 		case Undecided:
 			if (cameraWasUpdated) {
@@ -734,14 +748,15 @@ public class StateMachine implements Runnable {
 		// TODO if sees a ball near reactor
 		if (cameraWasUpdated) {
 			if (camera.seesBall()) {
-				robot.setState(State.GoBall);
-				side = WallSide.Undecided;
+				 robot.setState(State.GoBall);
+				 side = WallSide.Undecided;
 			}
 
-			if (camera.seesReactor() && !counters.shouldGiveUp() ) {
-				robot.setState(State.AllignReactor);
+			if (camera.seesReactor() && !counters.shouldGiveUp()) {
+				// robot.setState(State.AllignReactor);
 			}
 		}
+		checkDistanceTimeout();
 	}
 
 	public StateMachine(RobotSticky robot) {

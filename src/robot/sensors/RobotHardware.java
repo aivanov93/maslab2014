@@ -124,10 +124,10 @@ public class RobotHardware implements RobotEnviroment {
 		logger.log("speeds " + speed1 + " " + speed2 + " " + speed + " "
 				+ angularSpeed);
 
-		if (speed1>0) speed1+=(Math.signum(speed1)*0.115);
+		 speed1+=(Math.signum(speed1)*0.15);
 		// else speed1=0;
 		// if (Math.abs(speed2)>0.01)
-		if (speed2>0) speed2+=(Math.signum(speed2)*0.115);
+		 speed2+=(Math.signum(speed2)*0.15);
 		// else speed2=0;
 		motor1.setSpeed(speed1);
 		motor2.setSpeed(speed2);
@@ -178,8 +178,12 @@ public class RobotHardware implements RobotEnviroment {
 
 		// hardware.comm.transmit();
 
-		for (int i = 0; i < 150; i++) {
-			System.out.println("red " + hardware.colorSensor.getRedValue()+" green " + hardware.colorSensor.getGreenValue());
+		hardware.motor1.setSpeed(0.2);
+		hardware.motor2.setSpeed(-0.2);
+		
+		hardware.comm.transmit();
+		for (int i = 0; i < 10; i++) {
+		//	System.out.println("red " + hardware.colorSensor.getRedValue()+" green " + hardware.colorSensor.getGreenValue());
 			Thread.sleep(300);
 		}
 

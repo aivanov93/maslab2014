@@ -81,7 +81,11 @@ public class RobotSticky implements Robot {
 	
 	
 		// initialize sensors, driver and camera
-		this.driver = new Driver(0.004, 0.0, 0.00, 0.1,0.0 ,0.0);
+		
+		this.driver = new Driver(0.003, 0.0, 0.00, 0.1,0.0 ,0.0);
+		
+		
+		//this.driver = new Driver(0.005, 0.0, 0.00, 0.1,0.0 ,0.0);
 		
 		this.balls=new BallCounter();
 		Thread ballsThread=new Thread(new BallSorter(balls, hardware));
