@@ -55,21 +55,23 @@ public class Constants {
 	 * some step constants
 	 */
 	public static int allowedToMiss=5;
-	public static int stepsForCatchingBall=10;
+	public static int stepsForCatchingBall=80;
 	public static int stepsForSiloArm=300;	
 	public static double minDistanceToWall=5;
 	
 	public static double minDistanceToSilo=80;
-	public static double minDistanceToBall=10;	
+	public static double minDistanceToBall=5;	
 	public static double distanceForCatchingBall=30;
 		
 	public static double siloBallDistance=25;
 	
 
 	public static double formatAngle(double angle){
+//		System.out.println("converting "+ angle);
 		angle%=Math.PI*2;
 		if (angle>Math.PI) angle-=Math.PI*2;
 		if (angle<-Math.PI) angle+=Math.PI*2;
+//		System.out.println("returning "+angle);
 		return angle;
 	}
 	

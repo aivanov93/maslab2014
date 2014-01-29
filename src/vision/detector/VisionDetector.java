@@ -23,6 +23,7 @@ import org.opencv.highgui.Highgui;
 
 import vision.LeastSquares;
 import vision.Linearization;
+import vision.Linearization2;
 import vision.NewImageProcessor;
 import vision.detector.ColorObject.Type;
 
@@ -63,7 +64,7 @@ public class VisionDetector {
 		Type type = object.type();
 		double distance = object.distance();
 		if (objects.get(type) != null) {
-			if (objects.get(type).distance() < distance) {
+			if (objects.get(type).distance() > distance) {
 				objects.put(type, object);
 			}
 		} else {
@@ -79,31 +80,42 @@ public class VisionDetector {
 	 * @param angle
 	 */
 	public void sawBall(Color color, double x, double y) {
-		Point2D transform = new Point2D();
 		Type type;
 		if (color == Color.red) {
 			type = Type.RedBall;
 		} else {
 			type = Type.GreenBall;
 		}
-		double xx = Linearization.linearizeFloorY((int) x, (int) y);
-		double yy = Linearization.linearizeFloorX((int) x, (int) y);
+		double xx = Linearization2.linearizeFloorY((int) x, (int) y);
+		double yy = Linearization2.linearizeFloorX((int) x, (int) y);
 		Point2D ball = new Point2D(xx, yy);
+		System.out.println("baaaaaaaaaaaaaaaaaaaaaaaal " + yy + "  " + xx
+				+ "  dist  " + ball.distance(0, 0));
 		Ray2D ray2d = new Ray2D(0, 0, xx, yy);
-		putObject(new ColorObject(type, ball.distance(0, 0), ray2d.horizontalAngle(), yy, xx));
+		putObject(new ColorObject(type, ball.distance(0, 0),
+				ray2d.horizontalAngle(), yy, xx));
 	}
 
 	public void sawRectangle(Color color, double x, double y) {
 		Type type;
+		double dist, wallDist = 20;
 		if (color == Color.cyan) {
 			type = Type.Reactor;
+			dist = 1;
 		} else {
+			dist = 10;
 			type = Type.Silo;
 		}
-		double xx = Linearization.linearizeFloorY((int) x, (int) y);
-		double yy = Linearization.linearizeFloorX((int) x, (int) y);
-	    
-		putObject(new ColorObject(type, new Point2D(xx,yy).distance(0, 0), new Ray2D(0,0,xx,yy).horizontalAngle(), xx, yy));
+		double xx = Linearization2.linearizeFloorY((int) x, (int) y);
+		double yy = Linearization2.linearizeFloorX((int) x, (int) y);
+
+		int xpixel = (int) x;
+		Point2D center = wallPoints[xpixel];
+		StraightLine2D wall = findGoodPixels(xpixel - 40, xpixel + 40);
+		Point2D alligningPoint = Carrot.getAlligningCarrot(wall, center, dist,
+				wallDist, left);
+		putObject(new ColorObject(type, new Point2D(xx, yy).distance(0, 0),
+				wall.horizontalAngle(), alligningPoint.y(), alligningPoint.y()));
 	}
 
 	public int clamp(int i) {
@@ -113,8 +125,8 @@ public class VisionDetector {
 	public void foundWalls(int[] wallHeight) {
 		wallCoordinates = wallHeight;
 		for (int i = 0; i < wallHeight.length; i++) {
-			wallPoints[i] = new Point2D(Linearization.linearizeY(i,
-					wallHeight[i]), Linearization.linearizeX(i, wallHeight[i]));
+			wallPoints[i] = new Point2D(Linearization2.linearizeY(i,
+					wallHeight[i]), Linearization2.linearizeX(i, wallHeight[i]));
 		}
 		List<Integer> corners = new ArrayList<Integer>();
 		for (int i = 3; i < wallHeight.length; i++) {
@@ -139,15 +151,20 @@ public class VisionDetector {
 	public void makeWall(StraightLine2D wall, Type type) {
 		if (wall != null) {
 			double angle = wall.horizontalAngle();
-
-			StraightLine2D perpendicular = StraightLine2D.createPerpendicular(
-					wall, new Point2D(0, 0));
+			StraightLine2D perpendicular = new StraightLine2D(
+					new Point2D(0, 0), angle + Math.PI / 2);
 			Point2D intersection = wall.intersection(perpendicular);
-			Point2D carrot=Carrot.getCarrot(wall, 30, 30);
-			ColorObject wallObj = new ColorObject(type, Math.max(minDist,
-					intersection.distance(0, 0)), Constants.formatAngle(angle), carrot.y(), carrot.x(),
-					left);
-			objects.put(type, wallObj);
+			if (intersection != null) {
+				Point2D carrot = Carrot.getCarrot(wall, 40, 30, left);
+				if (intersection.distance(0, 0) + 15 > minDist)
+					minDist = intersection.distance(0, 0);
+				if (carrot != null) {
+					ColorObject wallObj = new ColorObject(type, minDist,
+							Constants.formatAngle(angle), carrot.y(),
+							carrot.x(), left, wall);
+					objects.put(type, wallObj);
+				}
+			}
 		}
 	}
 
@@ -181,10 +198,12 @@ public class VisionDetector {
 		}
 
 		if (seesGreenBall()) {
+
 			if (bigBall == null)
 				bigBall = greenBall();
-			else if (bigBall.distance() < greenBall().distance())
+			else if (bigBall.distance() > greenBall().distance())
 				bigBall = greenBall();
+
 		}
 		return bigBall;
 	}

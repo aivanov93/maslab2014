@@ -2,6 +2,7 @@ package game;
 
 import global.Constants;
 
+import java.util.List;
 import java.util.ArrayList;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -22,6 +23,7 @@ import robot.map.Localization;
 import robot.map.MapForSensors;
 import robot.map.MazeMap;
 import straightedge.geom.KPoint;
+import vision.NewImageProcessor;
 import vision.VisionRunnable;
 import vision.detector.ColorObject;
 import vision.detector.VisionDetector;
@@ -45,7 +47,7 @@ public class StateMachine implements Runnable {
 	GUI gui;
 
 	public static enum State {
-		Start, LookAround, GoBall, GoForward, GoReactor, GoSilo, LookAway, DriveBlind, StickyState, ReactorDeposit, FollowWall, AlignSilo, Turn90, FindYellowWall, CollectSilo, AllignReactor, GoObject, Stop, DriveStraight, FaceObject,
+		Start, LookAround, GoBall, GoForward, GoReactor, GoSilo, LookAway, DriveBlind, StickyState, ReactorDeposit, FollowWall, AlignSilo, Turn90, FindYellowWall, CollectSilo, AllignReactor, GoObject, Stop, DriveStraight, FaceObject, TimedOut,
 	}
 
 	public static enum Goal {
@@ -56,6 +58,7 @@ public class StateMachine implements Runnable {
 		Left, Right, Undecided
 	}
 
+	double time;
 	private int i = 0;
 
 	private RobotSticky robot;
@@ -69,7 +72,7 @@ public class StateMachine implements Runnable {
 	private int[] scoredBottom = new int[3];
 	private int[] scoredTop = new int[3];
 
-	private Counters counters;
+	private Counters counters = new Counters();
 	/**
 	 * signals whether balls where collected from silo
 	 */
@@ -122,6 +125,10 @@ public class StateMachine implements Runnable {
 	private AtomicBoolean newVisionAvailable;
 	private boolean cameraWasUpdated = false;
 
+	List<Double> xsMoved = new ArrayList<Double>();
+	List<Double> ysMoved = new ArrayList<Double>();
+	
+	private State timedOutState;
 	/**
 	 * Movement goals
 	 */
@@ -133,6 +140,7 @@ public class StateMachine implements Runnable {
 			.newScheduledThreadPool(1);
 
 	public void start() {
+		time = System.nanoTime();
 		// schedule clock
 		final ScheduledFuture<?> stepHandler = scheduler.scheduleAtFixedRate(
 				this, Constants.clock, Constants.clock, TimeUnit.MILLISECONDS);
@@ -152,7 +160,10 @@ public class StateMachine implements Runnable {
 	public void updateMissed() {
 		counters.missedObject();
 		if (counters.lostObject()) {
-			robot.setState(State.LookAround);
+			angle = 0;
+			distance = 15;
+			robot.driverReset();
+			robot.setState(State.FollowWall);
 		}
 		distance -= robot.distanceMoved();
 		angle -= robot.angleMoved();
@@ -206,6 +217,27 @@ public class StateMachine implements Runnable {
 	}
 
 	private void continueMove() {
+
+	}
+
+	private void checkDistanceTimeout() {
+		xsMoved.add(robot.odometry().xMoved());
+		ysMoved.add(robot.odometry().yMoved());
+		
+		if (xsMoved.size() > 90) {
+			xsMoved.remove(0);
+			ysMoved.remove(0);
+			double sumx=0, sumy=0;
+			for (int i=0; i<xsMoved.size(); i++){
+				sumx+=xsMoved.get(i);
+				sumy+=ysMoved.get(i);
+			}
+			if (Math.sqrt(sumx*sumx+sumy*sumy)<3){
+				timedOutState=robot.state();
+				counters.setStepsCounter(20);
+				robot.setState(State.TimedOut);
+			}
+		}
 
 	}
 
@@ -268,22 +300,18 @@ public class StateMachine implements Runnable {
 	public void run() {
 		log.step();
 		log.log(robot.state().toString() + " " + side + " distance:" + distance
-				+ "   " + Constants.formatAngle(angle) * 180 / Math.PI);
+				+ " angle  " + Constants.formatAngle(angle) * 180 / Math.PI
+				+ "  dx  " + dx + "   dy  " + dy);
 		t++;
-		if (t == 150) {
-			// robot.stop();
-			// System.exit(0);
-		}
+
 		// update sensors
 		robot.update();
-		gui.setOdometry(robot.odometry().distanceMoved(), robot.odometry()
-				.angleMoved());
-		gui.setState(robot.state());
-		gui.setGoal(distance, angle);
 		if (newVisionAvailable.compareAndSet(true, false)) {
 			cameraWasUpdated = true;
 			camera = globalDetector.clone();
 			oldVisionConsumed.getAndSet(true);
+			System.out.println("new camera information************* "
+					+ camera.seesBall());
 			// wgui.setLines(camera);
 
 			// gui.setVison(camera.seesGreenBall(), camera.seesRedBall(),
@@ -296,8 +324,9 @@ public class StateMachine implements Runnable {
 					+ camera.leftWall().distance() + " "
 					+ camera.leftWall().angle() * 180 / Math.PI);
 			log.log("wall center" + camera.centerWall().x() + " "
-					+ camera.centerWall().y() + camera.centerWall().distance()
-					+ " " + camera.centerWall().angle() * 180 / Math.PI);
+					+ camera.centerWall().y() + " "
+					+ camera.centerWall().distance() + " "
+					+ camera.centerWall().angle() * 180 / Math.PI);
 		}
 		// move the robot
 		robot.move(distance, Constants.formatAngle(angle));
@@ -322,6 +351,9 @@ public class StateMachine implements Runnable {
 		case GoBall:
 			goBall();
 			break;
+		case AllignReactor:
+			allignReactor();
+			break;
 		case GoSilo:
 			goSilo();
 			break;
@@ -331,6 +363,8 @@ public class StateMachine implements Runnable {
 		case DriveBlind:
 			driveBlind();
 			break;
+		case TimedOut:
+			timedOut();
 		default:
 			System.out.println("noo such state?");
 			break;
@@ -375,12 +409,16 @@ public class StateMachine implements Runnable {
 			 * Constants.allowedToMiss; } else
 			 */
 			if (camera.seesBall()) {
+				System.out.println("SAW BALL FROM LOOK AROUND"
+						+ camera.biggestBall().x() + "  "
+						+ camera.biggestBall().y());
 				robot.setState(State.GoBall);
-				System.out.println(" angle to ball form camera "
-						+ camera.biggestBall().angle());
 				counters.resetMissedObject();
+			} else if (camera.seesWallLeft()) {
+				robot.setState(State.FollowWall);
 			}
-		} else if (Math.abs(angleToTurn) < 0.01) {
+
+		} else if (Math.abs(angleToTurn) < Math.PI / 60) {
 			robot.setState(State.GoForward);
 		}
 
@@ -388,11 +426,21 @@ public class StateMachine implements Runnable {
 		distance = 0;
 
 	}
+	
+	public void timedOut(){
+		counters.stepped();
+		if (counters.done()){
+			robot.setState(timedOutState);
+		} else {
+			angle=0;
+			distance=-10;
+		}
+	}
 
 	public void goForward() {
 		angle = 0.0;
 		distance = 50;
-		if (robot.seesWall()) {
+		if (camera.seesWallLeft()) {
 			robot.setState(State.FollowWall);
 		}
 	}
@@ -401,37 +449,62 @@ public class StateMachine implements Runnable {
 	 * approaches the ball
 	 */
 	public void goBall() {
+		dx -= robot.odometry().xMoved();
+		dy -= robot.odometry().yMoved();
+		angle = new Ray2D(0, 0, dy, dx).horizontalAngle();
+		calculateDistance();
+		distance += 20;
+
 		if (cameraWasUpdated) {
-			System.out.println("I GOT IT");
 			// take care of false positives and false negatives
 			if (!camera.seesBall()) {
 				updateMissed();
 			} else {
-				System.out.println("SAW BALL");
+				counters.resetMissedObject();
+				log.log("SAW BALL");
 				// calculate new ball distance
-				dx = camera.biggestBall().angle();
-				dy = camera.biggestBall().distance();
+				dx = camera.biggestBall().x();
+				dy = camera.biggestBall().y();
+				angle = camera.biggestBall().angle();
+				System.out.println("angle " + angle + "converterted angle"
+						+ Constants.formatAngle(angle));
+				angle = Constants.formatAngle(camera.biggestBall().angle());
 				calculateDistance();
-				if (distance < Constants.minDistanceToBall) {
-					counters.setStepsCounter(Constants.stepsForCatchingBall);
-					robot.setState(State.DriveBlind);
-					distance = Constants.distanceForCatchingBall;
-				} else {
-					angle = camera.biggestBall().angle();
-				}
-			}
-		} else {
+				// System.out.println("I AM AWAY FOR "+distance);
 
+				distance += 20;
+				robot.driverReset();
+			}
+		}
+		if (distance < Constants.minDistanceToBall) {
+			// System.out.println("ANGLE??????+" + angle);
+			if (Math.abs(angle) < Math.PI / 3) {
+
+				// System.out.println("  clooooooooooose");
+				System.out
+						.println("((((((((((((((distance to ball " + distance);
+				counters.setStepsCounter(Constants.stepsForCatchingBall);
+				robot.setState(State.DriveBlind);
+				distance = Constants.distanceForCatchingBall + 20;
+
+				robot.driverReset();
+			}
 		}
 	}
 
 	public void driveBlind() {
 		counters.stepped();
 		distance -= robot.odometry().distanceMoved();
+		System.out.println("drive blind distance " + distance);
 		angle -= robot.odometry().angleMoved();
-		if (counters.done()) {
-			angleToTurn = Math.PI;
-			robot.setState(State.LookAround);
+		// if (counters.done()) {
+		if (distance < 30) {
+			angle = Math.PI;
+			dx = 0;
+			dy = 0;
+			distance = 0;
+			robot.setState(State.FollowWall);
+			robot.driverReset();
 		}
 	}
 
@@ -444,6 +517,7 @@ public class StateMachine implements Runnable {
 		dy -= robot.odometry().yMoved();
 		angle -= robot.odometry().angleMoved();
 		calculateDistance();
+
 		// if (distance < 0.03) {
 		// robot.setState(State.Stop);
 		// robot.hardware().move(0, 0);
@@ -498,7 +572,33 @@ public class StateMachine implements Runnable {
 	}
 
 	public void allignSilo() {
+		dx -= robot.odometry().xMoved();
+		dy -= robot.odometry().yMoved();
+		angle = new Ray2D(0, 0, dy, dx).horizontalAngle();
+		calculateDistance();
+		if (cameraWasUpdated) {
 
+		}
+	}
+
+	public void allignReactor() {
+		dx -= robot.odometry().xMoved();
+		dy -= robot.odometry().yMoved();
+		angle = new Ray2D(0, 0, dy, dx).horizontalAngle();
+		calculateDistance();
+		if (cameraWasUpdated) {
+			if (camera.seesReactor()) {
+				dx = camera.reactor().x();
+				dy = camera.reactor().y();
+				angle = camera.reactor().carrotAngle();
+				calculateDistance();
+				robot.driverReset();
+			}
+		}
+		if (distance < 10) {
+			robot.setState(State.FollowWall);
+			robot.driverReset();
+		}
 	}
 
 	public void collectSilo() {
@@ -507,7 +607,7 @@ public class StateMachine implements Runnable {
 		// } els0;//e if (stepsLeft == 0) {
 
 		// check if managed to collect any balls
-		if (robot.hardware().ballsCollected() != 0) { // if yes
+		if (robot.balls().redBalls() != 0) { // if yes
 			// check if there are balls left
 			if (camera.seesBigBall()) { // if no
 				// turn away from the silo
@@ -532,81 +632,90 @@ public class StateMachine implements Runnable {
 	// }
 
 	public void followWall() {
-		angle -= robot.odometry().angleMoved();
+		// angle -= robot.odometry().angleMoved();
+
 		dx -= robot.odometry().xMoved();
 		dy -= robot.odometry().yMoved();
+		angle = new Ray2D(0, 0, dy, dx).horizontalAngle();
 		calculateDistance();
-		if (cameraWasUpdated) {
-			distance = 40;
-			switch (side) {
-			case Left:
+		switch (side) {
+		case Left:
 
+			if (cameraWasUpdated) {
+				distance = 40;
 				if (!camera.seesWallLeft()) {
-					angle = Math.PI / 6;
 					side = WallSide.Undecided;
 				} else {
+					camera.leftWall().makeCarrot(30, 30);
+					double newangle = camera.leftWall().carrotAngle();
+					double newdx = camera.leftWall().x();
+					double newdy = camera.leftWall().y();
+					calculateDistance();
+					log.loga("new distance " + distance + " " + angle);
+					if (camera.seesWallCenter()) {
+						if (camera.centerWall().distance() < 30
+								&& Math.abs(camera.centerWall().angle()) > Math.PI / 4) {
+							log.loga("correcting for center");
 
-					// angle = camera.leftWall().angle();
-					// if the wall is on the right
-					if (!camera.leftWall().onLeft()) {
-						distance = 0;
-						angle = Math.PI - angle;
-					} else {
-						/*
-						 * double distanceToWall = camera.leftWall().distance();
-						 * if (camera.leftWall().distance() < 30) {
-						 * 
-						 * double off = Math.PI / 300 Math.min(distanceToWall -
-						 * 30, -10); angle += off;
-						 * 
-						 * log.loga("too close " + off * 180 / Math.PI); //
-						 * distance += 10; } if (distanceToWall > 40) { double
-						 * off = Math.PI / 300 Math.max(distanceToWall - 35,
-						 * 10); angle += off; log.loga("too far " + off * 180 /
-						 * Math.PI); } }
-						 */
-						wgui.setCarrot(new Point2D(camera.leftWall().x(),
-								camera.leftWall().y()));
-						angle = camera.leftWall().carrotAngle();
-						dx = camera.leftWall().x();
-						dy = camera.leftWall().y();
-						calculateDistance();
-						log.loga("new distance " + distance + " " + angle);
-						if (camera.seesWallCenter()) {
-							if (camera.centerWall().distance() < 50
-									&& Math.abs(camera.centerWall().angle()) > Math.PI / 3) {
-								log.loga("correcting for center");
+							newangle = camera.centerWall().carrotAngle();
+							newdx = camera.centerWall().x();
+							newdy = camera.centerWall().y();
+							calculateDistance();
+							System.out.println("on left"
+									+ camera.centerWall().onLeft());
 
-								angle = camera.centerWall().carrotAngle();
-								dx = camera.centerWall().x();
-								dy = camera.centerWall().y();
-								calculateDistance();
-								if (!camera.centerWall().onLeft()) {
-									distance = 0;
-									angle = Math.PI - angle;
-								}
-							}
 						}
-						if (Math.abs(angle) > Math.PI / 3)
-							distance = 25;
-						if (distance < 20)
-							distance = 40;
 					}
+
+					double ratio = 0.2;
+					dx = dx * ratio + newdx * (1 - ratio);
+					dy = dy * ratio + newdy * (1 - ratio);
+					angle = angle * ratio + (1 - ratio) * newangle;
+
+					wgui.setCarrot(new Point2D(dx, dy));
+					log.log("cameraaaaaaaaaaaa" + dx + " " + dy + " " + angle);
+					distance *= (Math.cos(angle) * Math.cos(angle));
+
+					if (!camera.leftWall().onLeft()
+							|| Math.abs(camera.leftWall().angle()) > Math.PI / 2.3) {
+						angle = -Math.PI / 3;
+						distance = 5;
+					}
+					robot.driverReset();
 				}
-				break;
-			case Undecided:
-				if (camera.seesWallLeft()) {
-					angle = camera.leftWall().angle();
-					side = WallSide.Left;
-				}
-				angle = 0;
-				distance = 50;
 			}
 
-			// if (camera.seesBall())
-			// robot.setState(State.GoBall);
+			break;
+		case Undecided:
+			if (cameraWasUpdated) {
+				if (camera.seesWallLeft()) {
+					angle = camera.leftWall().carrotAngle();
+					dx = camera.leftWall().x();
+					dy = camera.leftWall().y();
+				} else if (camera.seesWallCenter()) {
+					angle = camera.leftWall().carrotAngle();
+					dx = camera.leftWall().x();
+					dy = camera.leftWall().y();
+				} else {
+					distance = 15;
+				}
+			}
+			if (Math.abs(angle) < Math.PI / 3) {
+				side = WallSide.Left;
+			}
 
 		}
+
+		// TODO if sees a ball near reactor
+		if (camera.seesBall()) {
+			robot.setState(State.GoBall);
+			side = WallSide.Undecided;
+		}
+
+		if (camera.seesReactor()) {
+			robot.setState(State.AllignReactor);
+		}
+
 	}
 
 	public StateMachine(RobotSticky robot) {
@@ -622,9 +731,9 @@ public class StateMachine implements Runnable {
 				oldVisionConsumed, newVisionAvailable));
 		visionThread.start();
 
-		// dx=0;
-		// dy=90;
-		// angle=Math.PI/4;
+		dx = 0;
+		dy = 0;
+		angle = 0;
 
 	}
 

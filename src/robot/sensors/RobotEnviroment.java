@@ -23,13 +23,10 @@ public interface RobotEnviroment {
 	 */
 	public void updateCamera(VisionDetector detector);
 	
-	/**
-	 * no idea how all these will work at the moment
-	 * @return
-	 */
-	public int redBallsInside();
-	public int greenBallsInside();
-	public int ballsCollected();
+
+	public void sortRed();
+	
+	public void sortGreen();
 	
 	/**
 	 * speed and agular speed are from 0.0 to 1 so it just represents the coefficient from the maximum speed

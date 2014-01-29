@@ -11,42 +11,39 @@ import maple.devices.sensors.Ultrasonic;
 
 public class SensorsRunnable implements Runnable {
 
-	SensInfo data;
-	MapleComm comm;
-	Gyroscope gyro;
-	Encoder encLeft;
-	Encoder encRight;
-Ultrasonic ultraL, ultraR;
-	public SensorsRunnable(SensInfo data, MapleComm comm, Gyroscope gyro, Encoder encLeft, Encoder encRight, Ultrasonic ultraL, Ultrasonic ultraR) {
-		this.data = data;
-		this.comm=comm;
-		this.gyro=gyro;
-		this.encLeft=encLeft;
-		this.encRight=encRight;
-		this.ultraL=ultraL;
-		this.ultraR=ultraR;
+		RobotHardware hardware;
+
+	public SensorsRunnable(RobotHardware hardware) {
+		this.hardware = hardware;
+		
 	}
 
 	public void run() {
-			double lastTime=System.nanoTime();
-			double newTime;
-			while(true){
-				try {
-				
-				comm.updateSensorData();
-				newTime=System.nanoTime();
-				double dl = -encLeft.getDeltaAngularDistance() * Constants.wheelRadius;
-				double dr = encRight.getDeltaAngularDistance() * Constants.wheelRadius;
+		double lastTime = System.nanoTime();
+		double newTime;
+		while (true) {
+			try {
+
+				hardware.comm.updateSensorData();
+				newTime = System.nanoTime();
+				double dl = -hardware.encLeft.getDeltaAngularDistance()
+						* Constants.wheelRadius;
+				double dr = hardware.encRight.getDeltaAngularDistance()
+						* Constants.wheelRadius;
 				double dtotal = (dl + dr) / 2;
 				double theta = (dr - dl) / Constants.wheelBase;
-				data.set(lastTime, newTime, dtotal * Math.sin(theta), dtotal * Math.cos(theta),
-						-gyro.getOmega(), ultraL.getDistance(), ultraR.getDistance() );
-				lastTime=newTime;
-				
-					Thread.sleep(10);
-				} catch (InterruptedException e) {
-					e.printStackTrace();
-				}
+				hardware.data.set(lastTime, newTime, dtotal * Math.sin(theta), dtotal
+						* Math.cos(theta), -hardware.gyro.getOmega(),
+						hardware.ultraL.getDistance(),
+						hardware.ultraR.getDistance(),
+						hardware.colorSensor.getRedValue(),
+						hardware.colorSensor.getGreenValue());
+				lastTime = newTime;
+
+				Thread.sleep(10);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
 			}
+		}
 	}
 }

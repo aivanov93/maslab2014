@@ -30,7 +30,7 @@ public class VisionRunnable implements Runnable {
 		// Setup the camera
 		VideoCapture camera = new VideoCapture();
 		camera.open(1);
-		NewImageProcessor processor = new NewImageProcessor(false, false, 2);
+		NewImageProcessor processor = new NewImageProcessor(true, false, 2);
 		// detector.
 		// Main loop
 		Mat rawImage = new Mat();
@@ -45,6 +45,7 @@ public class VisionRunnable implements Runnable {
 			}
 			// check if the  state machine consumed the new information
 			if (oldInformationConsumed.compareAndSet(true, false)) { 
+				detector.reset();
 				// Process the image
 				processor.process(rawImage, detector);
 				newInformationAvailable.getAndSet(true); // announce

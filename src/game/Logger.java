@@ -12,7 +12,7 @@ public class Logger {
 	}
 	
 	public void log(String text){
-		if (t%10==0){
+		if (t%20==0){
 			System.out.println(text);
 		}
 	}

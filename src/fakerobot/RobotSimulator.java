@@ -139,6 +139,14 @@ public class RobotSimulator implements RobotEnviroment {
 		this.silo = silo;
 
 	}
+	
+	public void sortRed(){
+		
+	}
+	
+	public void sortGreen(){
+		
+	}
 
 	/**
 	 * Sets the angle of view of the camera

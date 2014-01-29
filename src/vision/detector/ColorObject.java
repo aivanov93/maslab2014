@@ -2,6 +2,7 @@ package vision.detector;
 
 import java.awt.Color;
 
+import math.geom2d.Point2D;
 import math.geom2d.line.Ray2D;
 import math.geom2d.line.StraightLine2D;
 
@@ -28,13 +29,14 @@ public class ColorObject {
 		this.y=y;
 	}
 	
-	public ColorObject(Type type, double dist, double angle, double x, double y, boolean left) {
+	public ColorObject(Type type, double dist, double angle, double x, double y, boolean left, StraightLine2D wall) {
 		this.distance = dist;
 		this.angle = angle;
 		this.type = type;
 		this.left=left;
 		this.x=x;
 		this.y=y;
+		this.line=wall;
 	}
 
 	public double x(){
@@ -43,6 +45,12 @@ public class ColorObject {
 	
 	public double y(){
 		return y;
+	}
+	
+	public void makeCarrot(double dist, double wallDist){
+		Point2D carrot=Carrot.getCarrot(line, dist, wallDist, left);
+		x=carrot.y();
+		y=carrot.x();	
 	}
 	
 	public double carrotAngle(){

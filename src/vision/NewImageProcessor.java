@@ -32,22 +32,22 @@ public class NewImageProcessor {
 	private static Scalar redRight1 = new Scalar(180, 256, 230);
 
 	private static Scalar redLeft2 = new Scalar(0, 110, 100);
-	private static Scalar redRight2 = new Scalar(10, 256, 230);
+	private static Scalar redRight2 = new Scalar(12, 256, 230);
 
 	private static Scalar greenLeft = new Scalar(43, 100, 50);
 	private static Scalar greenRight = new Scalar(90, 256, 230);
 
-	private static Scalar blueLeft = new Scalar(95, 110, 75);
-	private static Scalar blueRight = new Scalar(125, 256, 236);
+	private static Scalar blueLeft = new Scalar(87, 110, 75);
+	private static Scalar blueRight = new Scalar(130, 256, 236);
 
 	private static Scalar yellowLeft = new Scalar(25, 110, 120);
-	private static Scalar yellowRight = new Scalar(35, 256, 256);
+	private static Scalar yellowRight = new Scalar(35, 256, 240);
 
-	private static Scalar cyanLeft = new Scalar(0, 0, 220);
-	private static Scalar cyanRight = new Scalar(180, 50, 256);
+	private static Scalar cyanLeft = new Scalar(85, 110, 150);
+	private static Scalar cyanRight = new Scalar(92, 256, 256);
 
-	private static Scalar purpleLeft = new Scalar(0, 0, 220);
-	private static Scalar purpleRight = new Scalar(180, 50, 256);
+	private static Scalar purpleLeft = new Scalar(134, 110, 120);
+	private static Scalar purpleRight = new Scalar(160, 256, 256);
 
 	private static double minimalArea = 50;
 	private static Size picSize = new Size(640, 480);
@@ -176,18 +176,12 @@ public class NewImageProcessor {
 			double area = Imgproc.contourArea(contours.get(i));
 
 			if (area > 35) { // if the objects has a reasonable size
-				int ylowest = 0, xlowest=0;
-				for (int j = 0; j < contours.get(i).size().height; j++) {
-					double[] data = contours.get(i).get(j, 0);
-					x = (int) data[0];
-					y = (int) data[1];
-					if (y > ylowest) {
-						xlowest = x;
-						ylowest = y;
-					}
-				}
-				if (ylowest > wallHeight[xlowest]) {
-					detector.sawBall(color, xlowest, ylowest);
+				Moments m1 = Imgproc.moments(contours.get(i), false);			
+				int cx = (int) (m1.get_m10() / m1.get_m00());
+				int cy =(int)  (m1.get_m01() / m1.get_m00());
+				if (cy > wallHeight[cx]) {
+					
+					detector.sawBall(color, cx, cy);
 					// debug data
 					if (log) {
 						Imgproc.drawContours(imSlave, contours, i, new Scalar(
@@ -226,13 +220,12 @@ public class NewImageProcessor {
 			double area = Imgproc.contourArea(contours.get(i));
 
 			if (area > 40) { // if the objects has a reasonable size
-				int ylowest = 0, xlowest=0;
 				Moments m1 = Imgproc.moments(contours.get(i), false);			
 				int cx = (int) (m1.get_m10() / m1.get_m00());
 				int cy =(int)  (m1.get_m01() / m1.get_m00());
 				
 				if (cy > wallHeight[cx]) {
-					detector.sawRectangle(color, xlowest, ylowest);
+					detector.sawRectangle(color, cx, cy);
 					// debug data
 					if (log) {
 						Imgproc.drawContours(imSlave, contours, i, new Scalar(

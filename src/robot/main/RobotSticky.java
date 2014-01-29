@@ -15,6 +15,9 @@ import robot.map.MazeMap;
 import robot.map.Position;
 import robot.map.SampleMapsLocalization;
 import robot.moves.Driver;
+import robot.sensors.BallCounter;
+import robot.sensors.BallSorter;
+import robot.sensors.BallVisionSorter;
 import robot.sensors.RangeSensors;
 import robot.sensors.Odometry;
 import robot.sensors.RobotEnviroment;
@@ -37,7 +40,7 @@ public class RobotSticky implements Robot {
 	 * keeps all the readings from the camera
 	 */
 	
-	
+	private BallCounter balls;
 	
 	private Odometry odometry=new Odometry(0, 0, 0);
 
@@ -78,7 +81,11 @@ public class RobotSticky implements Robot {
 	
 	
 		// initialize sensors, driver and camera
-		this.driver = new Driver(0.002, 0.0, 0.4, 0.15, 0.0,6);
+		this.driver = new Driver(0.01, 0.0, 0.0, 0.2,0.0 ,0.0);
+		
+		this.balls=new BallCounter();
+		Thread ballsThread=new Thread(new BallSorter(balls, hardware));
+		ballsThread.start();
 		//this.camera = new VisionDetector();
 	}
 
@@ -101,6 +108,13 @@ public class RobotSticky implements Robot {
 	}
 	
 
+	public BallCounter balls(){
+		return balls;
+	}
+
+	public void driverReset(){
+		driver.reset();
+	}
 	
 	/**
 	 * updates sensor readings
@@ -118,8 +132,8 @@ public class RobotSticky implements Robot {
 	
 
 	public void move( double distance, double angle) {
-		if (Math.abs(distance)<1) distance=0;
-		if (Math.abs(angle)<Math.PI/50) angle=0;
+		if (Math.abs(distance)<3) distance=0;
+		if (Math.abs(angle)<Math.PI/120) angle=0;
 		double forwardSpeed=driver.moveForward(distance);
 		double angularSpeed=driver.rotate(angle);		
 		hardware.move(forwardSpeed, angularSpeed);

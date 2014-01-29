@@ -22,9 +22,10 @@ public class PID {
 	
 	public double next(double error){
 		P=error;
-		D=(error-previousError)/Constants.clock;
-		I+=error*Constants.clock;
-		
+		D=(error-previousError)/(Constants.clock/1000.0);
+		I+=error*Constants.clock/1000.0;
+		//if (I*Ki>0.2) I=0.2/Ki;
+		//if (I*Ki<-0.2) I=-0.2/Ki;
 		previousError=error;
 		return Kp*P+Ki*I+Kd*D;
 	}

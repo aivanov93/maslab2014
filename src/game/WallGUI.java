@@ -28,7 +28,6 @@ public class WallGUI extends JFrame{
 		public void paint(Graphics g){
 			super.paint(g);
 			Graphics2D g2 = (Graphics2D)g;
-			System.out.println("drawing");
 			g2.setColor(Color.white);
 			g2.fillRect(0, 0, 500, 500);
 			g2.setStroke(new BasicStroke(3));

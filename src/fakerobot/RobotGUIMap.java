@@ -62,8 +62,6 @@ public class RobotGUIMap extends JFrame {
 	 */
 	public void update(){
 		panel.repaint();
-		redBalls.setText(map.redBallsInside()+"");
-		greenBalls.setText(map.greenBallsInside()+"");
 	}
 	
 	public void setScore(int score){
