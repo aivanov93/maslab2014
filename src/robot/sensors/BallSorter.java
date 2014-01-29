@@ -32,16 +32,28 @@ public class BallSorter implements Runnable {
 			// Wait until the camera has a new frame
 			double red=hardware.data.red();
 			double green=hardware.data.green();
+			//System.out.println(red+" "+green);
+			
 			if (red>500 && green>500){
 				if (red-green>100){
+					System.out.println(red+" "+green);
+					
 					hardware.sortRed();
 					balls.gotBall(Color.red);
 				} else if (green-red>100){
+					System.out.println(red+" "+green);
+					
 					hardware.sortGreen();
 					balls.gotBall(Color.green);
 				}
 				try {
-					Thread.sleep(2000);
+					Thread.sleep(700);
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
+				hardware.resetSort();
+				try {
+					Thread.sleep(700);
 				} catch (InterruptedException e) {
 					e.printStackTrace();
 				}

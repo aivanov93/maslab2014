@@ -29,11 +29,11 @@ public class SensInfo {
 		return odo;
 	}
 	
-	public double red(){
+	public synchronized  double red(){
 		return red;
 	}
 	
-	public double green(){
+	public synchronized  double green(){
 		return green;
 	}
 

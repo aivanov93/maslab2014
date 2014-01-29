@@ -89,8 +89,8 @@ public class VisionDetector {
 		double xx = Linearization2.linearizeFloorY((int) x, (int) y);
 		double yy = Linearization2.linearizeFloorX((int) x, (int) y);
 		Point2D ball = new Point2D(xx, yy);
-		System.out.println("baaaaaaaaaaaaaaaaaaaaaaaal " + yy + "  " + xx
-				+ "  dist  " + ball.distance(0, 0));
+		// System.out.println("baaaaaaaaaaaaaaaaaaaaaaaal " + yy + "  " + xx
+		// + "  dist  " + ball.distance(0, 0));
 		Ray2D ray2d = new Ray2D(0, 0, xx, yy);
 		putObject(new ColorObject(type, ball.distance(0, 0),
 				ray2d.horizontalAngle(), yy, xx));
@@ -108,18 +108,28 @@ public class VisionDetector {
 		}
 		double xx = Linearization2.linearizeFloorY((int) x, (int) y);
 		double yy = Linearization2.linearizeFloorX((int) x, (int) y);
+//		System.out.println("SAW REACTORSSS");
 
 		int xpixel = (int) x;
 		Point2D center = wallPoints[xpixel];
-		StraightLine2D wall = findGoodPixels(xpixel - 40, xpixel + 40);
-		Point2D alligningPoint = Carrot.getAlligningCarrot(wall, center, dist,
-				wallDist, left);
-		putObject(new ColorObject(type, new Point2D(xx, yy).distance(0, 0),
-				wall.horizontalAngle(), alligningPoint.y(), alligningPoint.y()));
+		StraightLine2D wall = findGoodPixels(clampX(xpixel - 40),
+				clampX(xpixel + 40));
+		System.out.println(wall);
+		if (wall != null) {
+			Point2D alligningPoint = Carrot.getAlligningCarrot(wall, center,
+					dist, wallDist, left);
+			putObject(new ColorObject(type, new Point2D(xx, yy).distance(0, 0),
+					wall.horizontalAngle(), alligningPoint.y(),
+					alligningPoint.y()));
+		}
 	}
 
 	public int clamp(int i) {
 		return Math.max(Math.min(i, 319), 0);
+	}
+
+	public int clampX(int i) {
+		return Math.max(Math.min(i, 639), 0);
 	}
 
 	public void foundWalls(int[] wallHeight) {
@@ -141,7 +151,7 @@ public class VisionDetector {
 
 		wall = findGoodPixels(10, 150);
 		makeWall(wall, Type.LeftWall);
-		wall = findGoodPixels(600, 640);
+		wall = findGoodPixels(600, 639);
 		makeWall(wall, Type.RightWall);
 		wall = findGoodPixels(200, 300);
 		makeWall(wall, Type.CenterWall);
@@ -232,6 +242,7 @@ public class VisionDetector {
 				pointsToFit.add(wallPoints[goodWallPixels.get(i)]);
 				minDist = Math.min(pointsToFit.get(i).distance(0, 0), minDist);
 			}
+
 			left = pointsToFit.get(0).x() < pointsToFit.get(
 					pointsToFit.size() - 1).x();
 

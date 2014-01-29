@@ -29,12 +29,13 @@ public class RobotHardware implements RobotEnviroment {
 	public Encoder encLeft, encRight;
 	public Gyroscope gyro;
 	public Cytron corkScrew;
-	public Servo3001HB sortingServo, redServo, lowGreenServo, stickyServo;
-	public Servo6001HB unstickyServo;
+	public Servo3001HB  redServo, lowGreenServo, stickyServo;
+	public Servo6001HB sortingServo, unstickyServo;
 	public ColorSensor colorSensor;
 	public SensInfo data = new SensInfo();
 	Logger logger = new Logger();
 
+	private double sortingangle;
 	/**
 	 * Initializes all the required robot's part
 	 */
@@ -51,7 +52,7 @@ public class RobotHardware implements RobotEnviroment {
 		ultraR = new Ultrasonic(17, 25);
 		comm.registerDevice(ultraR);
 
-		sortingServo = new Servo3001HB(7);
+		sortingServo = new Servo6001HB(7);
 		lowGreenServo = new Servo3001HB(2);
 		redServo = new Servo3001HB(1);
 		stickyServo = new Servo3001HB(8);
@@ -74,12 +75,13 @@ public class RobotHardware implements RobotEnviroment {
 		comm.registerDevice(sortingServo);
 		comm.registerDevice(colorSensor);
 
+		sortingangle=110;
 		comm.initialize();
 
 		stickyServo.setAngle(180);
 		unstickyServo.setAngle(180);
 		lowGreenServo.setAngle(72);
-		sortingServo.setAngle(90);
+		sortingServo.setAngle(110);
 		redServo.setAngle(105);
 
 		corkScrew.setSpeed(0.25);
@@ -101,28 +103,36 @@ public class RobotHardware implements RobotEnviroment {
 	public void updateCamera(VisionDetector detector) {
 
 	}
-
-	public void sortRed() {
-
+	
+	public synchronized void resetSort(){
+		sortingangle=110;
 	}
 
-	public void sortGreen() {
-
+	public synchronized void sortRed() {
+		sortingangle=20;
 	}
 
-	public void move(double speed, double angularSpeed) {
+	public synchronized void sortGreen() {
+		sortingangle=200;
+	}
+
+	public synchronized void move(double speed, double angularSpeed) {
 		logger.step();
 		double speed1 = speed - angularSpeed;
 		double speed2 = speed + angularSpeed;
+		
 		logger.log("speeds " + speed1 + " " + speed2 + " " + speed + " "
 				+ angularSpeed);
 
-		// if (Math.abs(speed1)>0.01) speed1+=(Math.signum(speed1)*0.0);
+		if (speed1>0) speed1+=(Math.signum(speed1)*0.115);
 		// else speed1=0;
-		// if (Math.abs(speed2)>0.01) speed2+=(Math.signum(speed2)*0.0);
+		// if (Math.abs(speed2)>0.01)
+		if (speed2>0) speed2+=(Math.signum(speed2)*0.115);
 		// else speed2=0;
 		motor1.setSpeed(speed1);
 		motor2.setSpeed(speed2);
+		sortingServo.setAngle(sortingangle);
+		sortingServo.setAngle(sortingangle);
 		comm.transmit();
 	}
 

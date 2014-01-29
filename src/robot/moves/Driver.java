@@ -16,14 +16,15 @@ public class Driver {
 
 	public double moveForward(double distance) {
 		speed=speedController.next(distance);
-		return Math.max(Math.min(speed, 0.25),-0.25);
-
+		
+		return Math.max(Math.min(speed, 0.2),-0.2);
+		
 	}
 
 	public double rotate(double angle) {
 		angularSpeed=angularSpeedController.next(angle);
 
-		return Math.max(Math.min(angularSpeed, 0.18),-0.18);
+		return Math.max(Math.min(angularSpeed, 0.25),-0.25);
 	}
 	
 	public void reset(){

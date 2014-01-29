@@ -8,6 +8,7 @@ public class Counters {
 	 */
 	private int stepsLeft = 0;
 	
+	private int giveUp=0;
 	/**
 	 * used to account for vision problems
 	 */
@@ -15,6 +16,10 @@ public class Counters {
 
 	public Counters(){
 		
+	}
+	
+	public void startGiveUp(){
+		giveUp=90;
 	}
 	
 	public void missedObject(){
@@ -33,8 +38,18 @@ public class Counters {
 		stepsLeft=n;
 	}
 	
+
 	public void stepped(){
-		stepsLeft--;
+		
+		if (stepsLeft>0)stepsLeft--;
+	}
+	
+	public void giveUpStep(){
+		if (giveUp>0) giveUp--;
+	}
+	
+	public boolean shouldGiveUp(){
+		return giveUp!=0;
 	}
 	
 	public boolean done(){

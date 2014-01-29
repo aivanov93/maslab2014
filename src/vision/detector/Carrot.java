@@ -34,9 +34,16 @@ public static Point2D getAlligningCarrot(StraightLine2D wall, Point2D center, do
 		
 		double k=wall.horizontalAngle();
 		SimplePolygon2D rect=Polygons2D.createOrientedRectangle(center, wallDist*2, dist*2,	k);
-		if (onLeft) return rect.vertex(1);
-		else return rect.vertex(0);
+//		System.out.println(rect.vertex(0)+" "+rect.vertex(1)+" "+rect.vertex(2)+" "+rect.vertex(3));
+		return rect.vertex(0);
 	}
+
+
+public static void main(String[] args){
+	StraightLine2D line2d=new StraightLine2D(new Point2D(0, 10), new Point2D(30, 40));
+	getAlligningCarrot(line2d, new Point2D(20, 30), 10, 20, true);
+	
+}
 	
 	
 }

@@ -55,7 +55,7 @@ public class Constants {
 	 * some step constants
 	 */
 	public static int allowedToMiss=5;
-	public static int stepsForCatchingBall=80;
+	public static int stepsForCatchingBall=20;
 	public static int stepsForSiloArm=300;	
 	public static double minDistanceToWall=5;
 	
