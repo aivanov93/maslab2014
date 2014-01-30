@@ -37,7 +37,7 @@ public class NewImageProcessor {
 	private static Scalar greenLeft = new Scalar(43, 100, 50);
 	private static Scalar greenRight = new Scalar(90, 256, 230);
 
-	private static Scalar blueLeft = new Scalar(85, 60, 75);
+	private static Scalar blueLeft = new Scalar(85, 80, 75);
 	private static Scalar blueRight = new Scalar(120, 256, 256);
 
 	private static Scalar yellowLeft = new Scalar(25, 80, 120);

@@ -124,14 +124,19 @@ public class RobotHardware implements RobotEnviroment {
 		logger.log("speeds " + speed1 + " " + speed2 + " " + speed + " "
 				+ angularSpeed);
 
-		 speed1+=(Math.signum(speed1)*0.15);
-		// else speed1=0;
+		 speed1+=(Math.signum(speed1)*0.14);
 		// if (Math.abs(speed2)>0.01)
+		 speed2+=(Math.signum(speed2)*0.14);
+		
+		 /*
+		  *  speed1+=(Math.signum(speed1)*0.15);
+		 if (Math.abs(speed2)>0.01)
 		 speed2+=(Math.signum(speed2)*0.15);
-		// else speed2=0;
+		
+		  */
+		 // else speed2=0;
 		motor1.setSpeed(speed1);
 		motor2.setSpeed(speed2);
-		sortingServo.setAngle(sortingangle);
 		sortingServo.setAngle(sortingangle);
 		comm.transmit();
 	}
@@ -178,8 +183,8 @@ public class RobotHardware implements RobotEnviroment {
 
 		// hardware.comm.transmit();
 
-		hardware.motor1.setSpeed(0.2);
-		hardware.motor2.setSpeed(-0.2);
+		hardware.motor1.setSpeed(0.14);
+		hardware.motor2.setSpeed(0.14);
 		
 		hardware.comm.transmit();
 		for (int i = 0; i < 10; i++) {

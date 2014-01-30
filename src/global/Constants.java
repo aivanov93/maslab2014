@@ -68,11 +68,10 @@ public class Constants {
 
 	public static double formatAngle(double angle){
 //		System.out.println("converting "+ angle);
-		angle%=Math.PI*2;
-		if (angle>Math.PI) angle-=Math.PI*2;
-		if (angle<-Math.PI) angle+=Math.PI*2;
-//		System.out.println("returning "+angle);
-		return angle;
+		 double newAngle = angle;
+		    while (newAngle <= -Math.PI) newAngle += Math.PI*2;
+		    while (newAngle > Math.PI) newAngle -= Math.PI*2;
+		    return newAngle;
 	}
 	
 	/**

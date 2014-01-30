@@ -1,24 +1,26 @@
 package game;
 
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.ObjectOutputStream;
+import java.io.PrintWriter;
+import java.io.UnsupportedEncodingException;
+import java.io.Writer;
 
 public class Logger {
 	
 	int t;
-	FileOutputStream s=null;
+	PrintWriter writer = null;
+
 	public Logger(){
 		t=0;
-		File file = new File("resources/log.txt");
-
+		
 		try {
-			 s = new FileOutputStream(file);
-		} catch (FileNotFoundException e) {
+			writer=new PrintWriter("resources/log.txt", "UTF-8");
+		} catch (FileNotFoundException | UnsupportedEncodingException e) {
 			e.printStackTrace();
 		}
-		
+				
 	}
 	
 	public void step(){
@@ -29,9 +31,19 @@ public class Logger {
 		if (t%20==0){
 			System.out.println(text);
 		}
+		writer.write(text);
+	}
+	
+	public void fileLog(String text){
+		writer.write(text);
+	}
+	
+	public void flush(){
+		writer.write("\n");
 	}
 	
 	public void loga(String text){
 		System.out.println(text);
+		writer.write(text);
 	}
 }

@@ -17,8 +17,7 @@ public class Carrot {
 		
 
 		double k=wall.horizontalAngle();
-		StraightLine2D perpendicular=new StraightLine2D(new Point2D(0,0), k+Math.PI/2);
-		Point2D intersection=wall.intersection(perpendicular);
+		Point2D intersection=wall.projectedPoint(0, 0);
 		if (intersection!=null){
 			SimplePolygon2D rect=Polygons2D.createOrientedRectangle(intersection, dist*2, wallDist*2,	k);
 			if (onLeft) return rect.vertex(1);

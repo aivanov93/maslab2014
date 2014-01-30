@@ -114,7 +114,7 @@ public class VisionDetector {
 		Point2D center = wallPoints[xpixel];
 		StraightLine2D wall = findGoodPixels(clampX(xpixel - 40),
 				clampX(xpixel + 40));
-		System.out.println(wall);
+//		System.out.println(wall);
 		if (wall != null) {
 			Point2D alligningPoint = Carrot.getAlligningCarrot(wall, center,
 					dist, wallDist, left);
@@ -161,9 +161,7 @@ public class VisionDetector {
 	public void makeWall(StraightLine2D wall, Type type) {
 		if (wall != null) {
 			double angle = wall.horizontalAngle();
-			StraightLine2D perpendicular = new StraightLine2D(
-					new Point2D(0, 0), angle + Math.PI / 2);
-			Point2D intersection = wall.intersection(perpendicular);
+			Point2D intersection = wall.projectedPoint(0, 0);
 			if (intersection != null) {
 				Point2D carrot = Carrot.getCarrot(wall, 40, 30, left);
 				if (intersection.distance(0, 0) + 15 > minDist)
