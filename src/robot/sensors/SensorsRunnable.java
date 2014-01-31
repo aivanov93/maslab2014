@@ -32,12 +32,11 @@ public class SensorsRunnable implements Runnable {
 						* Constants.wheelRadius;
 				double dtotal = (dl + dr) / 2;
 				double theta = (dr - dl) / Constants.wheelBase;
-				hardware.data.set(lastTime, newTime, dtotal * Math.sin(theta), dtotal
-						* Math.cos(theta), -hardware.gyro.getOmega(),
-						hardware.ultraL.getDistance(),
-						hardware.ultraR.getDistance(),
+			
+				hardware.data.set(lastTime, newTime, dtotal , theta,
 						hardware.colorSensor.getRedValue(),
 						hardware.colorSensor.getGreenValue());
+				hardware.data.setBeam(hardware.dispenserBeam.getValue());
 				lastTime = newTime;
 
 				Thread.sleep(10);

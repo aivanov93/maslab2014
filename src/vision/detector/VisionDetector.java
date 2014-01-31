@@ -98,10 +98,10 @@ public class VisionDetector {
 
 	public void sawRectangle(Color color, double x, double y) {
 		Type type;
-		double dist, wallDist = 20;
+		double dist, wallDist = 28;
 		if (color == Color.cyan) {
 			type = Type.Reactor;
-			dist = 1;
+			dist = 10;
 		} else {
 			dist = 10;
 			type = Type.Silo;
@@ -114,13 +114,13 @@ public class VisionDetector {
 		Point2D center = wallPoints[xpixel];
 		StraightLine2D wall = findGoodPixels(clampX(xpixel - 40),
 				clampX(xpixel + 40));
-//		System.out.println(wall);
 		if (wall != null) {
-			Point2D alligningPoint = Carrot.getAlligningCarrot(wall, center,
+			Point2D alligningPoint = Carrot.getAlligningCarrot(type, wall, center,
 					dist, wallDist, left);
-			putObject(new ColorObject(type, new Point2D(xx, yy).distance(0, 0),
+			Point2D pointOnGoal=Carrot.getCarrotOnGoal(type, wall, center, dist, wallDist, left);
+			putObject(new ColorObject(type, center.distance(0, 0),
 					wall.horizontalAngle(), alligningPoint.y(),
-					alligningPoint.y()));
+					alligningPoint.x(), Math.atan2(pointOnGoal.y(), pointOnGoal.x()), pointOnGoal.y(), pointOnGoal.x()));
 		}
 	}
 
@@ -163,7 +163,7 @@ public class VisionDetector {
 			double angle = wall.horizontalAngle();
 			Point2D intersection = wall.projectedPoint(0, 0);
 			if (intersection != null) {
-				Point2D carrot = Carrot.getCarrot(wall, 40, 30, left);
+				Point2D carrot = Carrot.getCarrot(wall, 40, 40, left);
 				if (intersection.distance(0, 0) + 15 > minDist)
 					minDist = intersection.distance(0, 0);
 				if (carrot != null) {

@@ -7,8 +7,14 @@ public class GameStartTest {
 		
 		while( !botclient.gameStarted() ) {
 		}
+		
 		System.out.println("***GAME STARTED***");
 		System.out.println("MAP --> " + botclient.getMap());
+		
+	    while( botclient.gameStarted() ) {
+	    }
+	        
+	    System.out.println("***GAME STOPPED***");
 		
 		botclient.close();
 	}

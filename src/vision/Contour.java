@@ -67,7 +67,7 @@ public class Contour {
 	}
 	
 	public boolean isRect(){
-		return prRect>0.84;
+		return prRect>0.7;
 	}
 	
 	public boolean isEll(){

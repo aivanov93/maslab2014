@@ -24,13 +24,15 @@ public class VisionRunnable implements Runnable {
 
 	@Override
 	public void run() {
+		try {
+			
 		// Load the OpenCV library
 		System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
 
 		// Setup the camera
 		VideoCapture camera = new VideoCapture();
 		camera.open(1);
-		NewImageProcessor processor = new NewImageProcessor(true, false, 2);
+		NewImageProcessor processor = new NewImageProcessor(false, false, 2);
 		// detector.
 		// Main loop
 		Mat rawImage = new Mat();
@@ -50,6 +52,11 @@ public class VisionRunnable implements Runnable {
 				processor.process(rawImage, detector);
 				newInformationAvailable.getAndSet(true); // announce
 			}
+		}
+		
+
+		} catch (Exception e) {
+		 e.printStackTrace();
 		}
 
 	}

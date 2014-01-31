@@ -31,7 +31,7 @@ public class MapForSensors {
 	Point2D head, center;
 	Ray2D direction;
 	double robotAngle;
-
+	
 	public MapForSensors(List<LineSegment2D> walls, RangeSensors sensors) {
 		this.walls = walls;
 		this.sensors = sensors;

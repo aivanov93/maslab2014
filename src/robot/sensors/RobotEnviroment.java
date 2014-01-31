@@ -45,9 +45,13 @@ public interface RobotEnviroment {
 	
 	public void dumpRedBalls(int n);
 	
-	public void dumpGreenBallsTop(int n);
+	public void dumpGreenBall();
 	
-	public void dumpGreenBallsBottom(int n);
+	public void prepareBottomDump();
+	
+	public void resetGreenDump();
+	
+	public boolean checkIfDumped();
 	
 	public void update();
 	/**

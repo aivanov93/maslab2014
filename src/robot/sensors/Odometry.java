@@ -6,14 +6,18 @@ public class Odometry {
 	private double y;
 	private double angle;
 	private double distance;
-	
-	public Odometry(double xMoved, double yMoved, double angleMoved){
+	private double totalAngle;
+	public Odometry(double xMoved, double yMoved, double angleMoved, double totalTheta){
 		this.x=xMoved;
 		this.y=yMoved;
 		this.angle=angleMoved;
 		this.distance=Math.sqrt(x*x+y*y);
+		this.totalAngle=totalTheta;
 	}
 	
+	public double theta(){
+		return totalAngle;
+	}
 	public double xMoved(){
 		return x;
 	}
@@ -30,10 +34,11 @@ public class Odometry {
 		return distance;
 	}
 	
-	public void set(double xMoved, double yMoved, double angleMoved){
+	public void set(double xMoved, double yMoved, double angleMoved, double totalAngle){
 		this.x=xMoved;
 		this.y=yMoved;
 		this.angle=angleMoved;
 		this.distance=Math.sqrt(x*x+y*y);
+		this.totalAngle=totalAngle;
 	}
 }

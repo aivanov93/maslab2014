@@ -9,6 +9,7 @@ import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Random;
 
 import org.opencv.core.Core;
 import org.opencv.core.Mat;
@@ -40,11 +41,11 @@ public class NewImageProcessor {
 	private static Scalar blueLeft = new Scalar(85, 80, 75);
 	private static Scalar blueRight = new Scalar(120, 256, 256);
 
-	private static Scalar yellowLeft = new Scalar(25, 80, 120);
-	private static Scalar yellowRight = new Scalar(35, 256, 256);
+	private static Scalar yellowLeft = new Scalar(25, 150, 150);
+	private static Scalar yellowRight = new Scalar(30, 256, 256);
 
-	private static Scalar cyanLeft = new Scalar(85, 60, 150);
-	private static Scalar cyanRight = new Scalar(95, 256, 256);
+	private static Scalar cyanLeft = new Scalar(85, 60, 110);
+	private static Scalar cyanRight = new Scalar(99, 256, 256);
 
 	private static Scalar purpleLeft = new Scalar(119, 70, 80);
 	private static Scalar purpleRight = new Scalar(160, 256, 256);
@@ -218,15 +219,15 @@ public class NewImageProcessor {
 		for (int i = 0; i < contours.size(); i++) {
 			// get area
 			double area = Imgproc.contourArea(contours.get(i));
-			
-			if (area > 90) { // if the objects has a reasonable size
+
+			if (area > 100) { // if the objects has a reasonable size
 				Moments m1 = Imgproc.moments(contours.get(i), false);
-				if (color.equals(Color.pink)){
+				if (color.equals(Color.pink)) {
 					for (int j = 0; j < contours.get(i).size().height; j++) {
 						double[] data = contours.get(i).get(j, 0);
 						x = (int) data[0];
 						y = (int) data[1];
-						if (wallHeight[x] > y || wallHeight[x]==0) {
+						if (wallHeight[x] > y || wallHeight[x] == 0) {
 							wallHeight[x] = y;
 						}
 					}
@@ -235,12 +236,14 @@ public class NewImageProcessor {
 				int cy = (int) (m1.get_m01() / m1.get_m00());
 				if ((color.equals(Color.cyan) && cy < wallHeight[cx])
 						|| color.equals(Color.pink)) {
+					if (new Contour(contours.get(i)).isRect()){
 					detector.sawRectangle(color, cx, cy);
-					// debug data
-					if (log) {
-						Imgproc.drawContours(imSlave, contours, i, new Scalar(
-								0, 255,100), 5);
 					}
+					
+					// debug data
+					
+					
+					
 				}
 			}
 		}
@@ -310,15 +313,13 @@ public class NewImageProcessor {
 					wallHeight[x] = y;
 			}
 		}
-		if (log) {
+		if (true) {
 			byte[] whit = { (byte) 0, (byte) 0, (byte) 0 };
 
 			byte[] white = { (byte) 0, (byte) 0, (byte) 255 };
 			for (int i = 0; i < wallHeight.length; i++) {
 				imSlave.put(wallHeight[i], i, white);
 			}
-			Highgui.imwrite("resources/field/walls" + testnumber + ".jpg",
-					imSlave);
 		}
 	}
 
@@ -356,7 +357,7 @@ public class NewImageProcessor {
 		// *****wall contours*****
 		// ************************
 		findGoals(detector, rawImage, Color.pink);
-		
+
 		findWallContours(rawImage, Color.blue);
 		findWallContours(rawImage, Color.yellow);
 		analyzeWalls();
@@ -382,13 +383,12 @@ public class NewImageProcessor {
 	}
 
 	public static void main(String[] args) {
-		for (int i = 1; i < 7; i++) {
-			Mat im = Highgui.imread("resources/field/test" + i + ".png");
-			System.out.println(im.size().height);
-			NewImageProcessor proc = new NewImageProcessor(true, true, i);
-			VisionDetector detector = new VisionDetector();
-			proc.process(im, detector);
-			detector.draw(i);
-		}
+		Mat im = Highgui.imread("resources/field/test9.png");
+		System.out.println(im.size().height);
+		NewImageProcessor proc = new NewImageProcessor(true, true, 8);
+		VisionDetector detector = new VisionDetector();
+		proc.process(im, detector);
+		System.out.println(detector.reactor().x()+ " "+ detector.reactor().y());
+
 	}
 }

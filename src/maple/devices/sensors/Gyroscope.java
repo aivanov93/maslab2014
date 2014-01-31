@@ -42,7 +42,7 @@ public class Gyroscope extends Sensor {
 		int new_omega = (msb * 256) + ((int) lsb & 0xff);
 		if (new_omega != ERROR_CODE) {
 			omega = new_omega * CONVERSION_FACTOR;
-			omega-=Math.PI/370;
+			//omega-=Math.PI/370;
 		}
 	}
 

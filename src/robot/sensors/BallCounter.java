@@ -26,4 +26,13 @@ public class BallCounter {
 		return redBalls;
 	}
 	
+	public synchronized void dispensedGreen(){
+		greenBalls--;
+	}
+	
+	public synchronized void dispensedReds() {
+		redBalls--;
+		
+	}
+	
 }

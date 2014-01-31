@@ -30,7 +30,7 @@ public class RobotSticky implements Robot {
 	/**
 	 * uses sensors to get readings from IRs
 	 */
-	private RobotEnviroment hardware;
+	private RobotHardware hardware;
 	/**
 	 * driver includes PID controllers and computes the required forward and
 	 * angular speeds (unitless 0.0 to 1.0 with respect to max speed)
@@ -42,7 +42,7 @@ public class RobotSticky implements Robot {
 	
 	private BallCounter balls;
 	
-	private Odometry odometry=new Odometry(0, 0, 0);
+	private Odometry odometry=new Odometry(0, 0, 0,0);
 
 	/**
 	 * flag to know whether it's a simulation or no
@@ -67,12 +67,12 @@ public class RobotSticky implements Robot {
 		if (real) {
 			hardware=new RobotHardware();
 
-		} else {
-			hardware = SampleMaps.createMap2();
+		}// else {
+			//hardware = SampleMaps.createMap2();
 			
-		}
+	//	}
 		Position startPosition=BotClientMap.getDefaultMap().getPosition();
-		this.odometry=new Odometry(0, 0, 0);
+		this.odometry=new Odometry(0, 0, 0,0);
 	//	this.mapForSensors=SampleMapsLocalization.mapForSensors2(irs);
 	//	this.localization=new Localization(startPosition.x(), startPosition.y(), startPosition.angle(), mapForSensors);
 	
@@ -82,8 +82,18 @@ public class RobotSticky implements Robot {
 	
 		// initialize sensors, driver and camera
 		
-		this.driver = new Driver(0.0026, 0.0, 0.00, 0.1,0.0 ,0.0);
+	//	this.driver = new Driver(0.0065, 0.0, 0.003, 0.23,0.000 ,0.0025);
 		
+		this.driver = new Driver(0.005, 0.0, 0.0015, 0.25,0.000 ,0.001);
+		//0.0075, 0.0, 0.0015, 0.25,0.000 ,0.001
+		
+		driver.setP(0.007, 0.14);
+		
+		//this.driver = new Driver(0.004, 0.0, 0.00, 0.14,0.0 ,0.0);
+		
+		//this.driver = new Driver(0.003, 0.0, 0.00, 0.15,0.0 ,0.0);
+		
+		//this.driver = new Driver(0.003, 0.0, 0.00, 0.1,0.0 ,0.0);
 		
 		//this.driver = new Driver(0.005, 0.0, 0.00, 0.1,0.0 ,0.0);
 		
@@ -99,7 +109,7 @@ public class RobotSticky implements Robot {
 	
 	
 
-	public RobotEnviroment hardware(){
+	public RobotHardware hardware(){
 		return hardware;
 	}
 	
@@ -135,11 +145,11 @@ public class RobotSticky implements Robot {
 	}
 	
 
-	public void move( double distance, double angle) {
-		if (Math.abs(distance)<3) distance=0;
+	public void move( double distance, double angle, boolean ponly) {
+		if (Math.abs(distance)<0.5) distance=0;
 		if (Math.abs(angle)<Math.PI/120) angle=0;
-		double forwardSpeed=driver.moveForward(distance);
-		double angularSpeed=driver.rotate(angle);		
+		double forwardSpeed=driver.moveForward(distance, ponly);
+		double angularSpeed=driver.rotate(angle,ponly);		
 		hardware.move(forwardSpeed, angularSpeed);
 	}
 
